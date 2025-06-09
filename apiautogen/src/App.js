@@ -143,7 +143,7 @@ function App() {
     return classes;
   }
 
-  // Generate Java REST Assured code with POJO classes
+  // Generate Java code based on inputs
   const generateCode = () => {
     if (!serviceName.trim()) {
       alert("Please enter Service Name");
@@ -166,68 +166,85 @@ function App() {
     }
     try {
       responsePojoClasses = responseBody.trim()
-          ? generateClass("ResponseBody", JSON.parse(responseBody))
+          ? generateClass("SuccessResponseData", JSON.parse(responseBody))
           : {};
     } catch {
       alert("Invalid JSON in Response Body");
       return;
     }
 
+    // Combine all POJO classes as a string
     const requestPojo = Object.values(requestPojoClasses).join("\n");
     const responsePojo = Object.values(responsePojoClasses).join("\n");
 
-    const headersMapString = headers.length
-        ? `Map<String, String> headers = new HashMap<>();\n` +
-        headers.map((h) => `        headers.put("${h.key}", "${h.value}");`).join("\n")
+    // Prepare headers map entries
+    const headersMapEntries = headers.length
+        ? headers.map((h) => `        headers.put("${h.key}", "${h.value}");`).join("\n")
         : "";
 
-    // Prepare request body variable declaration if requestBody exists
-    const requestBodyVar =
-        requestBody.trim() && requestPojoClasses["RequestBody"]
-            ? `RequestBody requestBody = new RequestBody();\n        // TODO: set request body fields`
-            : "";
+    const headersMapString = headers.length
+        ? `Map<String, String> headers = new HashMap<>();\n${headersMapEntries}`
+        : "";
 
-    const mainCode = `
-import io.restassured.RestAssured;
-import io.restassured.response.Response;
-import static io.restassured.RestAssured.*;
+    // Main service class template
+    const mainCode = `import io.restassured.response.Response;
+import io.restassured.specification.RequestSpecification;
+import io.restassured.http.Headers;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.List;
 
-public class ${capitalize(serviceName)}Test {
+public class ${capitalize(serviceName)} extends BaseService {
+    String endpointUrl = "${apiEndpoint}";
 
-    public static void main(String[] args) {
-        RestAssured.baseURI = "${apiEndpoint}";
-
-        ${headersMapString ? headersMapString : "// No headers set"}
-
-        ${requestBodyVar}
-
-        Response response = given()
-            ${headers.length ? ".headers(headers)" : ""}
-            ${
-        requestBody.trim()
-            ? ".body(requestBody)"
-            : ""
+    public void ${capitalize(serviceName)}() {
+        try {
+            String appUrl = appConfig.get("yourfoldername", "configkey");
+            hostAddress = new URL(appUrl);
+        } catch (Exception ex) {
+        }
     }
-            .request("${requestType.toUpperCase()}", "")
-            .then()
-            .extract().response();
 
-        System.out.println("Response Code: " + response.getStatusCode());
-        System.out.println("Response Body: " + response.getBody().asString());
+    public void setHeader(String key, String value) {
+        headers.put(key, value);
+    }
+
+    public Response post() {
+        RequestSpecification requestSpecification = new baseRequestSpec().headers(new Headers());
+        Response response = post(requestSpecification, endpointUrl);
+        return response;
+    }
+
+    public SuccessResponseData getSuccessResponseData(Response response) {
+        return response.as(SuccessResponseData.class);
     }
 }
 `;
 
+    // Final generated code output
     setGeneratedCode(
         [
+          "import java.util.List;\n",
           requestPojo ? requestPojo + "\n\n" : "",
           responsePojo ? responsePojo + "\n\n" : "",
           mainCode,
         ].join("")
     );
+  };
+
+  // Download the generated code as a .java file
+  const downloadCode = () => {
+    if (!generatedCode) {
+      alert("No code to download!");
+      return;
+    }
+    const element = document.createElement("a");
+    const file = new Blob([generatedCode], { type: "text/plain" });
+    element.href = URL.createObjectURL(file);
+    element.download = `${capitalize(serviceName) || "GeneratedService"}.java`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
   };
 
   return (
@@ -259,7 +276,7 @@ public class ${capitalize(serviceName)}Test {
               type="url"
               value={apiEndpoint}
               onChange={(e) => setApiEndpoint(e.target.value)}
-              placeholder="https://api.example.com/v1/resource"
+              placeholder="/objects"
           />
         </div>
 
@@ -325,7 +342,7 @@ public class ${capitalize(serviceName)}Test {
               rows={10}
               value={requestBody}
               onChange={(e) => setRequestBody(e.target.value)}
-              placeholder='Enter JSON request body here'
+              placeholder="Enter JSON request body here"
               style={{ width: "100%", fontFamily: "monospace" }}
           />
           <button type="button" onClick={() => formatJson(requestBody, setRequestBody)}>
@@ -339,7 +356,7 @@ public class ${capitalize(serviceName)}Test {
               rows={10}
               value={responseBody}
               onChange={(e) => setResponseBody(e.target.value)}
-              placeholder='Enter JSON response body here'
+              placeholder="Enter JSON response body here"
               style={{ width: "100%", fontFamily: "monospace" }}
           />
           <button type="button" onClick={() => formatJson(responseBody, setResponseBody)}>
@@ -367,14 +384,17 @@ public class ${capitalize(serviceName)}Test {
           <button type="button" onClick={generateCode} style={{ marginRight: 10 }}>
             Generate Code
           </button>
-          <button type="button" onClick={clearAll}>
+          <button type="button" onClick={clearAll} style={{ marginRight: 10 }}>
             Clear
+          </button>
+          <button type="button" onClick={downloadCode} disabled={!generatedCode}>
+            Download Code
           </button>
         </div>
 
         {generatedCode && (
-            <fieldset style={{ marginTop: 30 }}>
-              <legend>Generated Java REST Assured Code</legend>
+            <fieldset style={{ marginTop: 20 }}>
+              <legend>Generated Java Code</legend>
               <textarea
                   rows={25}
                   readOnly
