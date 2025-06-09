@@ -1,0 +1,157 @@
+/* Reset and base styles */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f9f9f9;
+    margin: 0;
+    padding: 0;
+    color: #333;
+}
+
+h2 {
+    text-align: center;
+    margin-bottom: 25px;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+input[type="text"],
+input[type="url"],
+select,
+textarea {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1.5px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: border-color 0.3s ease;
+    font-family: inherit;
+    resize: vertical;
+}
+
+input[type="text"]:focus,
+input[type="url"]:focus,
+select:focus,
+textarea:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 6px rgba(0, 123, 255, 0.4);
+}
+
+button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 9px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+button:disabled {
+    background-color: #9bbcff;
+    cursor: not-allowed;
+}
+
+/* Layout container */
+#root > div {
+    max-width: 900px;
+    margin: 30px auto;
+    padding: 20px 30px;
+    background-color: white;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+/* Input blocks */
+div > label + input,
+div > label + select,
+div > label + textarea {
+    margin-bottom: 20px;
+}
+
+/* Header input group */
+.components-headerinput__root {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.components-headerinput__root input {
+    flex: 1;
+}
+
+.components-headerinput__root button {
+    flex-shrink: 0;
+}
+
+/* Request Headers fieldset */
+fieldset {
+    border: 1.5px solid #ddd;
+    padding: 16px 20px 20px 20px;
+    margin-bottom: 25px;
+    border-radius: 6px;
+}
+
+legend {
+    padding: 0 8px;
+    font-weight: 700;
+    color: #444;
+}
+
+/* Headers list */
+ul {
+    list-style-type: none;
+    padding-left: 0;
+    margin-top: 10px;
+}
+
+ul li {
+    padding: 6px 0;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+    color: #555;
+}
+
+ul li b {
+    color: #222;
+}
+
+/* Bulk add textarea */
+textarea[placeholder*="Bulk add headers"] {
+    font-family: monospace;
+}
+
+/* Buttons container */
+div > button {
+    margin-right: 12px;
+}
+
+/* Generated code block */
+pre {
+    background-color: #282c34;
+    color: #abb2bf;
+    padding: 20px;
+    border-radius: 6px;
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    font-family: "Source Code Pro", monospace, monospace;
+    font-size: 13px;
+    line-height: 1.4;
+    user-select: text;
+    box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.5);
+}
