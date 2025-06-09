@@ -13,7 +13,6 @@ function App() {
   const [responseCode, setResponseCode] = useState("200");
   const [generatedCode, setGeneratedCode] = useState("");
 
-  // Add a single header key/value pair
   const addHeader = () => {
     if (headerKey.trim() && headerValue.trim()) {
       setHeaders([...headers, { key: headerKey.trim(), value: headerValue.trim() }]);
@@ -22,7 +21,6 @@ function App() {
     }
   };
 
-  // Bulk add headers from textarea (expects key:value per line)
   const bulkAddHeaders = () => {
     if (bulkHeaders.trim()) {
       const newHeaders = bulkHeaders
@@ -41,7 +39,6 @@ function App() {
     }
   };
 
-  // Clear all form and output
   const clearAll = () => {
     setServiceName("");
     setApiEndpoint("");
@@ -56,7 +53,6 @@ function App() {
     setGeneratedCode("");
   };
 
-  // Format JSON string pretty or alert error
   const formatJson = (jsonStr, setter) => {
     try {
       if (!jsonStr.trim()) return;
@@ -68,10 +64,8 @@ function App() {
     }
   };
 
-  // Helper: capitalize first letter
   const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
-  // Detect Java type from JS value
   const detectType = (value) => {
     if (Array.isArray(value)) {
       if (value.length === 0) return "List<Object>";
@@ -84,15 +78,14 @@ function App() {
       case "boolean":
         return "boolean";
       case "object":
-        return null; // nested object to be handled recursively
+        return null;
       default:
         return "String";
     }
   };
 
-  // Recursive function to generate classes from JSON object
   function generateClass(name, jsonObj, classes = {}, processed = new Set()) {
-    if (processed.has(name)) return; // prevent circular references
+    if (processed.has(name)) return;
     processed.add(name);
 
     let classCode = `public class ${name} {\n`;
@@ -102,35 +95,26 @@ function App() {
       let type = detectType(value);
 
       if (type === null) {
-        // nested object → create new class
         const nestedClassName = capitalize(key);
         generateClass(nestedClassName, value, classes, processed);
         type = nestedClassName;
       } else if (type.startsWith("List<")) {
-        // for arrays, check nested object type inside list
-        const innerType = type.slice(5, -1);
-        if (innerType === null) {
-          // array of nested objects
-          if (Array.isArray(value) && value.length > 0 && typeof value[0] === "object") {
-            const nestedClassName = capitalize(key);
-            generateClass(nestedClassName, value[0], classes, processed);
-            type = `List<${nestedClassName}>`;
-          } else {
-            type = "List<Object>";
-          }
+        if (Array.isArray(value) && value.length > 0 && typeof value[0] === "object") {
+          const nestedClassName = capitalize(key);
+          generateClass(nestedClassName, value[0], classes, processed);
+          type = `List<${nestedClassName}>`;
+        } else {
+          type = "List<Object>";
         }
       }
 
-      // Field declaration
       classCode += `    private ${type} ${key};\n`;
 
-      // Getter
       gettersSetters +=
           `    public ${type} get${capitalize(key)}() {\n` +
           `        return ${key};\n` +
           `    }\n\n`;
 
-      // Setter
       gettersSetters +=
           `    public void set${capitalize(key)}(${type} ${key}) {\n` +
           `        this.${key} = ${key};\n` +
@@ -143,7 +127,6 @@ function App() {
     return classes;
   }
 
-  // Generate Java code based on inputs
   const generateCode = () => {
     if (!serviceName.trim()) {
       alert("Please enter Service Name");
@@ -173,20 +156,18 @@ function App() {
       return;
     }
 
-    // Combine all POJO classes as a string
     const requestPojo = Object.values(requestPojoClasses).join("\n");
     const responsePojo = Object.values(responsePojoClasses).join("\n");
 
-    // Prepare headers map entries
-    const headersMapEntries = headers.length
-        ? headers.map((h) => `        headers.put("${h.key}", "${h.value}");`).join("\n")
-        : "";
+    const methodLower = requestType.toLowerCase();
 
-    const headersMapString = headers.length
-        ? `Map<String, String> headers = new HashMap<>();\n${headersMapEntries}`
-        : "";
+    const methodCode = `
+    public Response ${methodLower}() {
+        RequestSpecification requestSpecification = new baseRequestSpec().headers(new Headers());
+        Response response = ${methodLower}(requestSpecification, endpointUrl);
+        return response;
+    }`;
 
-    // Main service class template
     const mainCode = `import io.restassured.response.Response;
 import io.restassured.specification.RequestSpecification;
 import io.restassured.http.Headers;
@@ -208,20 +189,13 @@ public class ${capitalize(serviceName)} extends BaseService {
     public void setHeader(String key, String value) {
         headers.put(key, value);
     }
-
-    public Response post() {
-        RequestSpecification requestSpecification = new baseRequestSpec().headers(new Headers());
-        Response response = post(requestSpecification, endpointUrl);
-        return response;
-    }
+${methodCode}
 
     public SuccessResponseData getSuccessResponseData(Response response) {
         return response.as(SuccessResponseData.class);
     }
-}
-`;
+}`;
 
-    // Final generated code output
     setGeneratedCode(
         [
           "import java.util.List;\n",
@@ -232,7 +206,6 @@ public class ${capitalize(serviceName)} extends BaseService {
     );
   };
 
-  // Download the generated code as a .java file
   const downloadCode = () => {
     if (!generatedCode) {
       alert("No code to download!");
@@ -248,17 +221,15 @@ public class ${capitalize(serviceName)} extends BaseService {
   };
 
   return (
-      <div
-          style={{
-            maxWidth: 900,
-            margin: "30px auto",
-            padding: 20,
-            background: "#fff",
-            borderRadius: 8,
-            boxShadow: "0 6px 15px rgba(0,0,0,0.1)",
-          }}
-      >
-        <h2>REST Assured Java Code Generator</h2>
+      <div style={{
+        maxWidth: 900,
+        margin: "30px auto",
+        padding: 20,
+        background: "#fff",
+        borderRadius: 8,
+        boxShadow: "0 6px 15px rgba(0,0,0,0.1)"
+      }}>
+        <h2>API Code Generator</h2>
 
         <div style={{ marginBottom: 15 }}>
           <label>Service Name</label>
@@ -295,8 +266,7 @@ public class ${capitalize(serviceName)} extends BaseService {
 
         <fieldset>
           <legend>Request Headers</legend>
-
-          <div className="components-headerinput__root" style={{ marginBottom: 8 }}>
+          <div style={{ marginBottom: 8 }}>
             <input
                 type="text"
                 placeholder="Header Key"
@@ -309,11 +279,8 @@ public class ${capitalize(serviceName)} extends BaseService {
                 value={headerValue}
                 onChange={(e) => setHeaderValue(e.target.value)}
             />
-            <button type="button" onClick={addHeader}>
-              Add Header
-            </button>
+            <button type="button" onClick={addHeader}>Add Header</button>
           </div>
-
           <textarea
               rows={3}
               placeholder="Bulk add headers (key:value per line)"
@@ -321,16 +288,12 @@ public class ${capitalize(serviceName)} extends BaseService {
               onChange={(e) => setBulkHeaders(e.target.value)}
               style={{ width: "100%", fontFamily: "monospace", marginBottom: 10 }}
           />
-          <button type="button" onClick={bulkAddHeaders}>
-            Bulk Add Headers
-          </button>
+          <button type="button" onClick={bulkAddHeaders}>Bulk Add Headers</button>
 
           {headers.length > 0 && (
               <ul>
                 {headers.map((h, i) => (
-                    <li key={i}>
-                      <b>{h.key}</b>: {h.value}
-                    </li>
+                    <li key={i}><b>{h.key}</b>: {h.value}</li>
                 ))}
               </ul>
           )}
@@ -345,9 +308,7 @@ public class ${capitalize(serviceName)} extends BaseService {
               placeholder="Enter JSON request body here"
               style={{ width: "100%", fontFamily: "monospace" }}
           />
-          <button type="button" onClick={() => formatJson(requestBody, setRequestBody)}>
-            Format Request JSON
-          </button>
+          <button type="button" onClick={() => formatJson(requestBody, setRequestBody)}>Format Request JSON</button>
         </fieldset>
 
         <fieldset>
@@ -359,37 +320,22 @@ public class ${capitalize(serviceName)} extends BaseService {
               placeholder="Enter JSON response body here"
               style={{ width: "100%", fontFamily: "monospace" }}
           />
-          <button type="button" onClick={() => formatJson(responseBody, setResponseBody)}>
-            Format Response JSON
-          </button>
+          <button type="button" onClick={() => formatJson(responseBody, setResponseBody)}>Format Response JSON</button>
         </fieldset>
 
         <div style={{ marginTop: 10 }}>
           <label>Response Code</label>
           <select value={responseCode} onChange={(e) => setResponseCode(e.target.value)}>
-            {[
-              100, 101, 102, 200, 201, 202, 203, 204, 205, 206, 207, 208, 226, 300, 301, 302,
-              303, 304, 305, 307, 308, 400, 401, 402, 403, 404, 405, 406, 407, 408, 409, 410,
-              411, 412, 413, 414, 415, 416, 417, 418, 422, 425, 426, 428, 429, 431, 451, 500,
-              501, 502, 503, 504, 505, 506, 507, 508, 510, 511,
-            ].map((code) => (
-                <option key={code} value={code}>
-                  {code}
-                </option>
+            {[100, 101, 102, 200, 201, 202, 204, 400, 401, 403, 404, 500, 502, 503].map((code) => (
+                <option key={code} value={code}>{code}</option>
             ))}
           </select>
         </div>
 
         <div style={{ marginTop: 20 }}>
-          <button type="button" onClick={generateCode} style={{ marginRight: 10 }}>
-            Generate Code
-          </button>
-          <button type="button" onClick={clearAll} style={{ marginRight: 10 }}>
-            Clear
-          </button>
-          <button type="button" onClick={downloadCode} disabled={!generatedCode}>
-            Download Code
-          </button>
+          <button type="button" onClick={generateCode} style={{ marginRight: 10 }}>Generate Code</button>
+          <button type="button" onClick={clearAll} style={{ marginRight: 10 }}>Clear</button>
+          <button type="button" onClick={downloadCode} disabled={!generatedCode}>Download Code</button>
         </div>
 
         {generatedCode && (
