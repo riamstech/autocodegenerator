@@ -1,0 +1,1 @@
+// Required for service worker, left blank intentionally
