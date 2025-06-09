@@ -174,7 +174,7 @@ function App() {
   return (
     <div className="app">
       <header>
-        <h1>Selenium Code Generator</h1>
+        <h1>Selenium Auto Code Generator</h1>
         <div className="connection-status">
           WebSocket: {isConnected ?
             <span className="connected">Connected</span> :
@@ -188,7 +188,7 @@ function App() {
           <h2>Received Selenium Code</h2>
           <div className="code-container">
             {codeLines.length === 0 ? (
-              <p className="empty-state">No code received yet</p>
+              <p className="empty-state">No Record Action Performed yet</p>
             ) : (
               codeLines.map((line, index) => (
                 <div
