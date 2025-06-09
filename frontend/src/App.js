@@ -24,8 +24,8 @@ function App() {
       try {
         const message = event.data;
         const lines = message.split('\n')
-          .filter(line => line.trim() !== '')
-          .map(line => line.trim());
+            .filter(line => line.trim() !== '')
+            .map(line => line.trim());
 
         setCodeLines(prev => [...prev, ...lines]);
       } catch (err) {
@@ -52,9 +52,9 @@ function App() {
 
   const toggleLineSelection = (index) => {
     setSelectedLines(prev =>
-      prev.includes(index)
-        ? prev.filter(i => i !== index)
-        : [...prev, index]
+        prev.includes(index)
+            ? prev.filter(i => i !== index)
+            : [...prev, index]
     );
   };
 
@@ -75,16 +75,15 @@ function App() {
       const [_, byType, selector] = match;
       const locator = `By.${byType}("${selector}")`;
 
-      // Helper to convert string with spaces to camelCase
       const toCamelCase = (str) => {
         return str
-          .split(' ')
-          .map((word, i) =>
-            i === 0
-              ? word.charAt(0).toLowerCase() + word.slice(1)
-              : word.charAt(0).toUpperCase() + word.slice(1)
-          )
-          .join('');
+            .split(' ')
+            .map((word, i) =>
+                i === 0
+                    ? word.charAt(0).toLowerCase() + word.slice(1)
+                    : word.charAt(0).toUpperCase() + word.slice(1)
+            )
+            .join('');
       };
 
       let baseName = selector;
@@ -133,8 +132,8 @@ function App() {
 
       if (parsed.actionType === 'sendKeys') {
         const methodName = parsed.varName.includes('Password') ? 'setPassword' :
-                           parsed.varName.includes('UserName') ? 'setUserName' :
-                           'set' + capitalize(parsed.varName);
+            parsed.varName.includes('UserName') ? 'setUserName' :
+                'set' + capitalize(parsed.varName);
         methodLines.push(`    public void ${methodName}(String value) {\n        driver.findElement(GUIMap.${parsed.varName}).sendKeys(value);\n    }`);
       } else if (parsed.actionType === 'click') {
         const methodName = 'click' + capitalize(parsed.varName);
@@ -172,99 +171,103 @@ function App() {
   };
 
   return (
-    <div className="app">
-      <header>
-        <h1>Selenium Auto Code Generator</h1>
-        <div className="connection-status">
-          WebSocket: {isConnected ?
-            <span className="connected">Connected</span> :
-            <span className="disconnected">Disconnected</span>}
-          {error && <span className="error"> - {error}</span>}
-        </div>
-      </header>
+      <div className="App">
+        <header>
+          <h1>Selenium Auto Code Generator</h1>
+          <div className="connection-status">
+            WebSocket: {isConnected ?
+              <span className="connected">Connected</span> :
+              <span className="disconnected">Disconnected</span>}
+            {error && <span className="error"> - {error}</span>}
+          </div>
+        </header>
 
-      <div className="container">
-        <div className="code-display">
-          <h2>Received Selenium Code</h2>
-          <div className="code-container">
-            {codeLines.length === 0 ? (
-              <p className="empty-state">No Record Action Performed yet</p>
-            ) : (
-              codeLines.map((line, index) => (
-                <div
-                  key={index}
-                  className={`code-line ${selectedLines.includes(index) ? 'selected' : ''}`}
-                  onClick={() => toggleLineSelection(index)}
-                >
-                  <Highlight language="java" code={line || ''} />
-                </div>
-              ))
-            )}
-          </div>
-          <div className="button-group">
-            <button onClick={clearAll} className="clear-btn">
-              Clear All
-            </button>
-            <button onClick={deleteSelectedLines} disabled={selectedLines.length === 0} className="delete-btn">
-              Delete Selected
-            </button>
-          </div>
-        </div>
-
-        <div className="controls">
-          <h2>Generate Page Class</h2>
-          <div className="input-group">
-            <input
-              type="text"
-              value={currentPageName}
-              onChange={(e) => setCurrentPageName(e.target.value)}
-              placeholder="Enter page class name (e.g. LoginPage)"
-              className="page-name-input"
-            />
-            <button
-              onClick={generatePageClass}
-              disabled={!currentPageName || selectedLines.length === 0}
-              className="generate-btn"
-            >
-              Generate Page Class
-            </button>
-          </div>
-          <div className="selection-info">
-            {selectedLines.length} line(s) selected
-          </div>
-        </div>
-
-        <div className="page-classes">
-          <h2>Generated Page Classes</h2>
-          {pageClasses.length === 0 ? (
-            <p className="empty-state">No page classes generated yet</p>
-          ) : (
-            pageClasses.map((page, index) => (
-              <div key={index} className="page-class">
-                <h3>{page.name}.java</h3>
-                <Highlight language="java" code={page.content || ''} />
-                <div className="button-group">
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(page.content);
-                    }}
-                    className="copy-btn"
-                  >
-                    Copy to Clipboard
-                  </button>
-                  <button
-                    onClick={() => exportToJavaFile(page.content, page.name)}
-                    className="export-btn"
-                  >
-                    Export to Java File
-                  </button>
-                </div>
+        <div className="container">
+          <div className="top-row">
+            <div className="code-display">
+              <h2>Received Selenium Code</h2>
+              <div className="code-container">
+                {codeLines.length === 0 ? (
+                    <p className="empty-state">No Record Action Performed yet</p>
+                ) : (
+                    codeLines.map((line, index) => (
+                        <div
+                            key={index}
+                            className={`code-line ${selectedLines.includes(index) ? 'selected' : ''}`}
+                            onClick={() => toggleLineSelection(index)}
+                        >
+                          <Highlight language="java" code={line || ''} />
+                        </div>
+                    ))
+                )}
               </div>
-            ))
-          )}
+              <div className="button-group">
+                <button onClick={clearAll} className="clear-btn">
+                  Clear All
+                </button>
+                <button onClick={deleteSelectedLines} disabled={selectedLines.length === 0} className="delete-btn">
+                  Delete Selected
+                </button>
+              </div>
+            </div>
+
+            <div className="controls">
+              <h2>Generate Page Class</h2>
+              <div className="input-group">
+                <input
+                    type="text"
+                    value={currentPageName}
+                    onChange={(e) => setCurrentPageName(e.target.value)}
+                    placeholder="Enter page class name (e.g. LoginPage)"
+                    className="page-name-input"
+                />
+                <button
+                    onClick={generatePageClass}
+                    disabled={!currentPageName || selectedLines.length === 0}
+                    className="generate-btn"
+                >
+                  Generate Page Class
+                </button>
+              </div>
+              <div className="selection-info">
+                {selectedLines.length} line(s) selected
+              </div>
+            </div>
+          </div>
+
+          <div className="bottom-section">
+            <div className="page-classes">
+              <h2>Generated Page Classes</h2>
+              {pageClasses.length === 0 ? (
+                  <p className="empty-state">No page classes generated yet</p>
+              ) : (
+                  pageClasses.map((page, index) => (
+                      <div key={index} className="page-class">
+                        <h3>{page.name}.java</h3>
+                        <Highlight language="java" code={page.content || ''} />
+                        <div className="button-group">
+                          <button
+                              onClick={() => {
+                                navigator.clipboard.writeText(page.content);
+                              }}
+                              className="copy-btn"
+                          >
+                            Copy to Clipboard
+                          </button>
+                          <button
+                              onClick={() => exportToJavaFile(page.content, page.name)}
+                              className="export-btn"
+                          >
+                            Export to Java File
+                          </button>
+                        </div>
+                      </div>
+                  ))
+              )}
+            </div>
+          </div>
         </div>
       </div>
-    </div>
   );
 }
 

@@ -1,282 +1,242 @@
 body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-  'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-  sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #f5f5f5;
-  overflow-x: hidden;
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
+    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
+    sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-color: #f5f5f5;
+    overflow-x: hidden;
 }
 
-.app {
-  padding: 20px;
-  max-width: 100%;
-  width: 100%;
-  margin: 0 auto;
-  box-sizing: border-box;
+.App {
+    padding: 20px;
+    max-width: 100%;
+    margin: 0 auto;
 }
 
 header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #ddd;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #ddd;
 }
 
 h1 {
-  margin: 0;
-  color: #333;
+    margin: 0;
+    color: #333;
 }
 
 .connection-status {
-  font-size: 0.9rem;
+    font-size: 0.9rem;
 }
 
 .connected {
-  color: #4CAF50;
-  font-weight: bold;
+    color: #4caf50;
+    font-weight: bold;
 }
 
 .disconnected {
-  color: #F44336;
-  font-weight: bold;
+    color: #f44336;
+    font-weight: bold;
 }
 
 .error {
-  color: #d32f2f;
-  font-weight: bold;
+    color: #d32f2f;
+    margin-left: 10px;
+    font-weight: 600;
 }
 
 .container {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 20px;
-  width: 100%;
+    width: 100%;
 }
 
-.code-display, .controls, .page-classes {
-  background: white;
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  width: 100%;
-  box-sizing: border-box;
+.top-row {
+    display: flex;
+    gap: 20px;
+    width: 100%;
+    margin-bottom: 20px;
 }
 
-h2 {
-  margin-top: 0;
-  color: #444;
-  font-size: 1.2rem;
+.code-display {
+    flex: 2;
+    min-width: 300px;
+    background-color: white;
+    border-radius: 6px;
+    padding: 10px;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+    display: flex;
+    flex-direction: column;
+    max-height: 600px;
+}
+
+.controls {
+    flex: 1;
+    max-width: 400px;
+    background-color: white;
+    border-radius: 6px;
+    padding: 20px 15px;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
 }
 
 .code-container {
-  max-height: 400px;
-  overflow-y: auto;
-  border: 1px solid #ccc;
-  padding: 10px;
-  background-color: #1e1e1e;
-  border-radius: 4px;
-}
-
-pre, code {
-  white-space: pre-wrap !important;
-  word-break: break-word !important;
+    flex: 1;
+    overflow-y: auto;
+    margin-bottom: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    background: #fafafa;
+    padding: 10px;
+    font-size: 0.9rem;
+    font-family: "Source Code Pro", monospace;
 }
 
 .code-line {
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-  background-color: #2d2d2d;
-  color: #f8f8f2;
-  padding: 8px;
-  border-radius: 4px;
-  margin-bottom: 6px;
-  font-family: monospace;
-  font-size: 14px;
-  cursor: pointer;
+    padding: 6px 10px;
+    margin-bottom: 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+    user-select: none;
 }
 
 .code-line:hover {
-  background-color: #f9f9f9;
+    background-color: #e0e0e0;
 }
 
 .code-line.selected {
-  background-color: #e3f2fd;
-  border-left: 3px solid #2196F3;
+    background-color: #bbdefb;
 }
 
 .empty-state {
-  color: #666;
-  font-style: italic;
-  padding: 10px;
-  text-align: center;
-}
-
-.clear-btn {
-  padding: 8px 16px;
-  background-color: #f44336;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.clear-btn:hover {
-  background-color: #d32f2f;
-}
-
-.input-group {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 15px;
-  flex-wrap: wrap;
-}
-
-.page-name-input {
-  flex: 1;
-  padding: 8px 12px;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  font-size: 0.9rem;
-  min-width: 200px;
-}
-
-.generate-btn {
-  padding: 8px 16px;
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.generate-btn:disabled {
-  background-color: #a5d6a7;
-  cursor: not-allowed;
-}
-
-.generate-btn:hover:not(:disabled) {
-  background-color: #388E3C;
-}
-
-.selection-info {
-  color: #666;
-  font-size: 0.9rem;
-  margin-bottom: 10px;
-}
-
-.page-class {
-  margin-bottom: 20px;
-  padding: 15px;
-  background: #fafafa;
-  border: 1px solid #eee;
-  border-radius: 4px;
-  overflow-x: auto;
-}
-
-.page-class h3 {
-  margin-top: 0;
-  color: #333;
-  font-size: 1.1rem;
-}
-
-.copy-btn {
-  padding: 6px 12px;
-  background-color: #2196F3;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.8rem;
-  margin-top: 0;
-}
-
-.copy-btn:hover {
-  background-color: #1976D2;
+    font-style: italic;
+    color: #999;
+    padding: 20px 0;
+    text-align: center;
 }
 
 .button-group {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-  flex-wrap: wrap;
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
 }
 
+/* Buttons except export & copy */
+.clear-btn,
+.delete-btn,
+.generate-btn {
+    background-color: #f44336;  /* red */
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+
+.clear-btn:hover,
+.delete-btn:hover,
+.generate-btn:hover {
+    background-color: #d32f2f;  /* darker red */
+}
+
+.delete-btn:disabled,
+.generate-btn:disabled {
+    background-color: #a5d6a7;  /* light green */
+    cursor: not-allowed;
+}
+
+/* Export button */
 .export-btn {
-  padding: 6px 12px;
-  background-color: #6a1b9a;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 0.8rem;
+    background-color: #1976d2;  /* blue */
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
 }
 
 .export-btn:hover {
-  background-color: #4a148c;
+    background-color: #1565c0;  /* darker blue */
 }
 
-.page-class pre {
-  white-space: pre-wrap;
-  word-break: break-word;
+/* Copy button */
+.copy-btn {
+    background-color: #4caf50;  /* green */
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
 }
 
-/* NEW: Make Generate Page Class section smaller and more compact */
-.controls {
-  padding: 12px 16px;
-  font-size: 0.85rem;
+.copy-btn:hover {
+    background-color: #388e3c;  /* darker green */
 }
 
-.controls h2 {
-  font-size: 1rem;
-  margin-bottom: 10px;
+.input-group {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
 }
 
-.controls .input-group {
-  gap: 8px;
-  margin-bottom: 10px;
+.page-name-input {
+    flex: 1;
+    padding: 8px 10px;
+    font-size: 1rem;
+    border-radius: 4px;
+    border: 1px solid #ccc;
 }
 
-.controls .page-name-input {
-  padding: 6px 10px;
-  font-size: 0.85rem;
+.selection-info {
+    font-size: 0.9rem;
+    color: #666;
 }
 
-.controls .generate-btn {
-  padding: 6px 12px;
-  font-size: 0.85rem;
-}
-
-/* Responsive behavior */
-@media (max-width: 768px) {
-  .container {
-    grid-template-columns: 1fr;
-  }
-
-  header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .connection-status {
-    margin-top: 10px;
-  }
-
-  .input-group {
-    flex-direction: column;
-  }
-
-  .generate-btn, .page-name-input {
+.bottom-section {
     width: 100%;
-  }
+    background-color: white;
+    border-radius: 6px;
+    padding: 15px 15px 30px 15px;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 0.1);
+}
 
-  .button-group button {
-    flex: 1 1 100%;
-  }
+.page-classes h2 {
+    margin-top: 0;
+    color: #333;
+}
+
+.page-class {
+    margin-bottom: 30px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    padding: 10px;
+    background: #fafafa;
+}
+
+.page-class h3 {
+    margin: 0 0 10px 0;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+    .top-row {
+        flex-direction: column;
+    }
+
+    .controls,
+    .code-display {
+        max-width: 100%;
+    }
 }
