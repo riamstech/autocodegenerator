@@ -18,6 +18,13 @@ function App() {
   const [stepDefinition, setStepDefinition] = useState("");
   const [featureFile, setFeatureFile] = useState("");
 
+  // Track view mode for each JSON field
+  const [viewMode, setViewMode] = useState({
+    request: 'edit',
+    response: 'edit',
+    error: 'edit'
+  });
+
   const addHeader = () => {
     if (headerKey.trim() && headerValue.trim()) {
       setHeaders([...headers, { key: headerKey.trim(), value: headerValue.trim() }]);
@@ -59,17 +66,30 @@ function App() {
     setGeneratedCode("");
     setStepDefinition("");
     setFeatureFile("");
+    setViewMode({
+      request: 'edit',
+      response: 'edit',
+      error: 'edit'
+    });
   };
 
-  const formatJson = (jsonStr, setter) => {
+  const formatJson = (jsonStr, setter, field) => {
     try {
-      if (!jsonStr.trim()) return;
+      if (!jsonStr.trim()) {
+        alert("Please enter JSON to format");
+        return;
+      }
       const parsed = JSON.parse(jsonStr);
       const pretty = JSON.stringify(parsed, null, 2);
       setter(pretty);
+      setViewMode({...viewMode, [field]: 'view'});
     } catch (e) {
-      alert("Invalid JSON! Cannot format.");
+      alert("Invalid JSON! Please check your input.\nError: " + e.message);
     }
+  };
+
+  const toggleEditMode = (field) => {
+    setViewMode({...viewMode, [field]: 'edit'});
   };
 
   const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
@@ -451,68 +471,182 @@ public class ${capitalize(serviceName)}Steps {
 
         <fieldset style={{ marginBottom: 15, padding: 15 }}>
           <legend>Request Body</legend>
-          <textarea
-              rows={10}
-              value={requestBody}
-              onChange={(e) => setRequestBody(e.target.value)}
-              placeholder="Enter JSON request body here"
-              style={{
-                width: "100%",
-                fontFamily: "monospace",
-                padding: 8
-              }}
-          />
-          <button
-              type="button"
-              onClick={() => formatJson(requestBody, setRequestBody)}
-              style={{ marginTop: 8, padding: "8px 16px" }}
-          >
-            Format Request JSON
-          </button>
+          {viewMode.request === 'view' ? (
+              <div style={{ position: 'relative' }}>
+                <SyntaxHighlighter
+                    language="json"
+                    style={tomorrow}
+                    customStyle={{
+                      fontSize: '14px',
+                      borderRadius: '4px',
+                      padding: '16px',
+                      overflowX: 'auto',
+                      backgroundColor: '#f5f5f5'
+                    }}
+                >
+                  {requestBody}
+                </SyntaxHighlighter>
+                <button
+                    onClick={() => toggleEditMode('request')}
+                    style={{
+                      position: 'absolute',
+                      top: '10px',
+                      right: '10px',
+                      padding: '4px 8px',
+                      background: '#ff4444',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                >
+                  Edit
+                </button>
+              </div>
+          ) : (
+              <textarea
+                  rows={10}
+                  value={requestBody}
+                  onChange={(e) => setRequestBody(e.target.value)}
+                  placeholder="Enter JSON request body here"
+                  style={{
+                    width: "100%",
+                    fontFamily: "monospace",
+                    padding: 8
+                  }}
+              />
+          )}
+          <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+            {viewMode.request === 'edit' && (
+                <button
+                    type="button"
+                    onClick={() => formatJson(requestBody, setRequestBody, 'request')}
+                    style={{ padding: "8px 16px" }}
+                >
+                  Format JSON
+                </button>
+            )}
+          </div>
         </fieldset>
 
         <fieldset style={{ marginBottom: 15, padding: 15 }}>
           <legend>Success Response Body</legend>
-          <textarea
-              rows={10}
-              value={responseBody}
-              onChange={(e) => setResponseBody(e.target.value)}
-              placeholder="Enter JSON success response body here"
-              style={{
-                width: "100%",
-                fontFamily: "monospace",
-                padding: 8
-              }}
-          />
-          <button
-              type="button"
-              onClick={() => formatJson(responseBody, setResponseBody)}
-              style={{ marginTop: 8, padding: "8px 16px" }}
-          >
-            Format Response JSON
-          </button>
+          {viewMode.response === 'view' ? (
+              <div style={{ position: 'relative' }}>
+                <SyntaxHighlighter
+                    language="json"
+                    style={tomorrow}
+                    customStyle={{
+                      fontSize: '14px',
+                      borderRadius: '4px',
+                      padding: '16px',
+                      overflowX: 'auto',
+                      backgroundColor: '#f5f5f5'
+                    }}
+                >
+                  {responseBody}
+                </SyntaxHighlighter>
+                <button
+                    onClick={() => toggleEditMode('response')}
+                    style={{
+                      position: 'absolute',
+                      top: '10px',
+                      right: '10px',
+                      padding: '4px 8px',
+                      background: '#ff4444',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                >
+                  Edit
+                </button>
+              </div>
+          ) : (
+              <textarea
+                  rows={10}
+                  value={responseBody}
+                  onChange={(e) => setResponseBody(e.target.value)}
+                  placeholder="Enter JSON success response body here"
+                  style={{
+                    width: "100%",
+                    fontFamily: "monospace",
+                    padding: 8
+                  }}
+              />
+          )}
+          <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+            {viewMode.response === 'edit' && (
+                <button
+                    type="button"
+                    onClick={() => formatJson(responseBody, setResponseBody, 'response')}
+                    style={{ padding: "8px 16px" }}
+                >
+                  Format JSON
+                </button>
+            )}
+          </div>
         </fieldset>
 
         <fieldset style={{ marginBottom: 15, padding: 15 }}>
           <legend>Error Response Body</legend>
-          <textarea
-              rows={10}
-              value={errorResponseBody}
-              onChange={(e) => setErrorResponseBody(e.target.value)}
-              placeholder="Enter JSON error response body here"
-              style={{
-                width: "100%",
-                fontFamily: "monospace",
-                padding: 8
-              }}
-          />
-          <button
-              type="button"
-              onClick={() => formatJson(errorResponseBody, setErrorResponseBody)}
-              style={{ marginTop: 8, padding: "8px 16px" }}
-          >
-            Format Error Response JSON
-          </button>
+          {viewMode.error === 'view' ? (
+              <div style={{ position: 'relative' }}>
+                <SyntaxHighlighter
+                    language="json"
+                    style={tomorrow}
+                    customStyle={{
+                      fontSize: '14px',
+                      borderRadius: '4px',
+                      padding: '16px',
+                      overflowX: 'auto',
+                      backgroundColor: '#f5f5f5'
+                    }}
+                >
+                  {errorResponseBody}
+                </SyntaxHighlighter>
+                <button
+                    onClick={() => toggleEditMode('error')}
+                    style={{
+                      position: 'absolute',
+                      top: '10px',
+                      right: '10px',
+                      padding: '4px 8px',
+                      background: '#ff4444',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
+                >
+                  Edit
+                </button>
+              </div>
+          ) : (
+              <textarea
+                  rows={10}
+                  value={errorResponseBody}
+                  onChange={(e) => setErrorResponseBody(e.target.value)}
+                  placeholder="Enter JSON error response body here"
+                  style={{
+                    width: "100%",
+                    fontFamily: "monospace",
+                    padding: 8
+                  }}
+              />
+          )}
+          <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+            {viewMode.error === 'edit' && (
+                <button
+                    type="button"
+                    onClick={() => formatJson(errorResponseBody, setErrorResponseBody, 'error')}
+                    style={{ padding: "8px 16px" }}
+                >
+                  Format JSON
+                </button>
+            )}
+          </div>
         </fieldset>
 
         <div style={{ marginBottom: 15 }}>
