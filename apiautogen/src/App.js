@@ -252,62 +252,57 @@ public class ${capitalize(serviceName)}Steps {
     private SuccessResponseData successResponse;
     private ErrorResponseData errorResponse;
 
-    @Given("I set the API endpoint for ${serviceName}")
-    public void setApiEndpoint() {
-        // Endpoint is already set in the service class
-    }
-
-    @When("I send a ${requestType} request to ${serviceName}")
-    public void sendRequest() {
+    @Given("the user send ${requestType.toLowerCase()} request to ${serviceName} service endpoint")
+    public void sendRequestToServiceEndpoint() {
         response = ${serviceName.toLowerCase()}.${methodLower}();
     }
 
-    @Then("the response status code should be {int}")
+    @Then("the user should get status code as {int}")
     public void verifyStatusCode(int expectedStatusCode) {
         assertEquals(expectedStatusCode, response.getStatusCode());
     }
 
-    @Then("the response should match the success schema")
+    @Then("the user verify the success schema of the response returned as expected for ${serviceName} service endpoint")
     public void verifySuccessSchema() {
         successResponse = ${serviceName.toLowerCase()}.getSuccessResponseData(response);
         assertNotNull(successResponse);
     }
 
-    @Then("the response should match the error schema")
-    public void verifyErrorSchema() {
-        errorResponse = ${serviceName.toLowerCase()}.getErrorResponseData(response);
-        assertNotNull(errorResponse);
-    }
-
-    @Then("the success response body should contain valid data")
+    @And("the user verify the success response body should contain valid data for ${serviceName} service endpoint")
     public void verifySuccessResponseBody() {
         // Add specific assertions for success response fields here
         // Example: assertNotNull(successResponse.getFieldName());
     }
 
-    @Then("the error response body should contain valid error details")
+    @Then("the user verify the error schema of the response returned as expected for ${serviceName} service endpoint")
+    public void verifyErrorSchema() {
+        errorResponse = ${serviceName.toLowerCase()}.getErrorResponseData(response);
+        assertNotNull(errorResponse);
+    }
+
+    @And("the user verify the error response body should contain valid data for ${serviceName} service endpoint")
     public void verifyErrorResponseBody() {
         // Add specific assertions for error response fields here
         // Example: assertNotNull(errorResponse.getErrorMessage());
     }
 }`;
 
+
+
     // Generate Feature File
     const featureCode = `Feature: ${capitalize(serviceName)} API Tests
 
   Scenario: Verify successful ${requestType} request to ${serviceName}
-    Given I set the API endpoint for ${serviceName}
-    When I send a ${requestType} request to ${serviceName}
-    Then the response status code should be 200
-    And the response should match the success schema
-    And the success response body should contain valid data
+    Given the user send ${requestType.toLowerCase()} request to ${serviceName} service endpoint
+    Then the user should get status code as 200
+    Then the user verify the success schema of the response returned as expected for ${serviceName} service endpoint
+    And the user verify the success response body should contain valid data for ${serviceName} service endpoint
 
   Scenario: Verify error response for ${requestType} request to ${serviceName}
-    Given I set the API endpoint for ${serviceName}
-    When I send a ${requestType} request to ${serviceName}
-    Then the response status code should be 400
-    And the response should match the error schema
-    And the error response body should contain valid error details`;
+    Given the user send ${requestType.toLowerCase()} request to ${serviceName} service endpoint
+    Then the user should get status code as 400
+    Then the user verify the error schema of the response returned as expected for ${serviceName} service endpoint
+    And the user verify the error response body should contain valid data for ${serviceName} service endpoint`;
 
     setGeneratedCode(
         [
@@ -322,6 +317,7 @@ public class ${capitalize(serviceName)}Steps {
     setStepDefinition(stepDefCode);
     setFeatureFile(featureCode);
   };
+
 
   const downloadCode = () => {
     if (!generatedCode) {
