@@ -10,8 +10,11 @@ function App() {
   const [bulkHeaders, setBulkHeaders] = useState("");
   const [requestBody, setRequestBody] = useState("");
   const [responseBody, setResponseBody] = useState("");
+  const [errorResponseBody, setErrorResponseBody] = useState("");
   const [responseCode, setResponseCode] = useState("200");
   const [generatedCode, setGeneratedCode] = useState("");
+  const [stepDefinition, setStepDefinition] = useState("");
+  const [featureFile, setFeatureFile] = useState("");
 
   const addHeader = () => {
     if (headerKey.trim() && headerValue.trim()) {
@@ -49,8 +52,11 @@ function App() {
     setBulkHeaders("");
     setRequestBody("");
     setResponseBody("");
+    setErrorResponseBody("");
     setResponseCode("200");
     setGeneratedCode("");
+    setStepDefinition("");
+    setFeatureFile("");
   };
 
   const formatJson = (jsonStr, setter) => {
@@ -139,6 +145,8 @@ function App() {
 
     let requestPojoClasses = {};
     let responsePojoClasses = {};
+    let errorResponsePojoClasses = {};
+
     try {
       requestPojoClasses = requestBody.trim()
           ? generateClass("RequestBody", JSON.parse(requestBody))
@@ -147,6 +155,7 @@ function App() {
       alert("Invalid JSON in Request Body");
       return;
     }
+
     try {
       responsePojoClasses = responseBody.trim()
           ? generateClass("SuccessResponseData", JSON.parse(responseBody))
@@ -156,8 +165,18 @@ function App() {
       return;
     }
 
+    try {
+      errorResponsePojoClasses = errorResponseBody.trim()
+          ? generateClass("ErrorResponseData", JSON.parse(errorResponseBody))
+          : {};
+    } catch {
+      alert("Invalid JSON in Error Response Body");
+      return;
+    }
+
     const requestPojo = Object.values(requestPojoClasses).join("\n");
     const responsePojo = Object.values(responsePojoClasses).join("\n");
+    const errorResponsePojo = Object.values(errorResponsePojoClasses).join("\n");
 
     const methodLower = requestType.toLowerCase();
 
@@ -194,16 +213,92 @@ ${methodCode}
     public SuccessResponseData getSuccessResponseData(Response response) {
         return response.as(SuccessResponseData.class);
     }
+    
+    public ErrorResponseData getErrorResponseData(Response response) {
+        return response.as(ErrorResponseData.class);
+    }
 }`;
+
+    // Generate Step Definition
+    const stepDefCode = `import io.cucumber.java.en.*;
+import io.restassured.response.Response;
+import static org.junit.Assert.*;
+
+public class ${capitalize(serviceName)}Steps {
+    private ${capitalize(serviceName)} ${serviceName.toLowerCase()} = new ${capitalize(serviceName)}();
+    private Response response;
+    private SuccessResponseData successResponse;
+    private ErrorResponseData errorResponse;
+
+    @Given("I set the API endpoint for ${serviceName}")
+    public void setApiEndpoint() {
+        // Endpoint is already set in the service class
+    }
+
+    @When("I send a ${requestType} request to ${serviceName}")
+    public void sendRequest() {
+        response = ${serviceName.toLowerCase()}.${methodLower}();
+    }
+
+    @Then("the response status code should be {int}")
+    public void verifyStatusCode(int expectedStatusCode) {
+        assertEquals(expectedStatusCode, response.getStatusCode());
+    }
+
+    @Then("the response should match the success schema")
+    public void verifySuccessSchema() {
+        successResponse = ${serviceName.toLowerCase()}.getSuccessResponseData(response);
+        assertNotNull(successResponse);
+    }
+
+    @Then("the response should match the error schema")
+    public void verifyErrorSchema() {
+        errorResponse = ${serviceName.toLowerCase()}.getErrorResponseData(response);
+        assertNotNull(errorResponse);
+    }
+
+    @Then("the success response body should contain valid data")
+    public void verifySuccessResponseBody() {
+        // Add specific assertions for success response fields here
+        // Example: assertNotNull(successResponse.getFieldName());
+    }
+
+    @Then("the error response body should contain valid error details")
+    public void verifyErrorResponseBody() {
+        // Add specific assertions for error response fields here
+        // Example: assertNotNull(errorResponse.getErrorMessage());
+    }
+}`;
+
+    // Generate Feature File
+    const featureCode = `Feature: ${capitalize(serviceName)} API Tests
+
+  Scenario: Verify successful ${requestType} request to ${serviceName}
+    Given I set the API endpoint for ${serviceName}
+    When I send a ${requestType} request to ${serviceName}
+    Then the response status code should be 200
+    And the response should match the success schema
+    And the success response body should contain valid data
+
+  Scenario: Verify error response for ${requestType} request to ${serviceName}
+    Given I set the API endpoint for ${serviceName}
+    When I send a ${requestType} request to ${serviceName}
+    Then the response status code should be 400
+    And the response should match the error schema
+    And the error response body should contain valid error details`;
 
     setGeneratedCode(
         [
           "import java.util.List;\n",
           requestPojo ? requestPojo + "\n\n" : "",
           responsePojo ? responsePojo + "\n\n" : "",
+          errorResponsePojo ? errorResponsePojo + "\n\n" : "",
           mainCode,
         ].join("")
     );
+
+    setStepDefinition(stepDefCode);
+    setFeatureFile(featureCode);
   };
 
   const downloadCode = () => {
@@ -220,9 +315,37 @@ ${methodCode}
     document.body.removeChild(element);
   };
 
+  const downloadStepDefinition = () => {
+    if (!stepDefinition) {
+      alert("No step definition to download!");
+      return;
+    }
+    const element = document.createElement("a");
+    const file = new Blob([stepDefinition], { type: "text/plain" });
+    element.href = URL.createObjectURL(file);
+    element.download = `${capitalize(serviceName) || "Generated"}Steps.java`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
+
+  const downloadFeatureFile = () => {
+    if (!featureFile) {
+      alert("No feature file to download!");
+      return;
+    }
+    const element = document.createElement("a");
+    const file = new Blob([featureFile], { type: "text/plain" });
+    element.href = URL.createObjectURL(file);
+    element.download = `${capitalize(serviceName) || "Generated"}APITests.feature`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
+
   return (
       <div style={{
-        maxWidth: 900,
+        maxWidth: 1200,
         margin: "30px auto",
         padding: 20,
         background: "#fff",
@@ -312,15 +435,27 @@ ${methodCode}
         </fieldset>
 
         <fieldset>
-          <legend>Response Body</legend>
+          <legend>Success Response Body</legend>
           <textarea
               rows={10}
               value={responseBody}
               onChange={(e) => setResponseBody(e.target.value)}
-              placeholder="Enter JSON response body here"
+              placeholder="Enter JSON success response body here"
               style={{ width: "100%", fontFamily: "monospace" }}
           />
           <button type="button" onClick={() => formatJson(responseBody, setResponseBody)}>Format Response JSON</button>
+        </fieldset>
+
+        <fieldset>
+          <legend>Error Response Body</legend>
+          <textarea
+              rows={10}
+              value={errorResponseBody}
+              onChange={(e) => setErrorResponseBody(e.target.value)}
+              placeholder="Enter JSON error response body here"
+              style={{ width: "100%", fontFamily: "monospace" }}
+          />
+          <button type="button" onClick={() => formatJson(errorResponseBody, setErrorResponseBody)}>Format Error Response JSON</button>
         </fieldset>
 
         <div style={{ marginTop: 10 }}>
@@ -335,18 +470,44 @@ ${methodCode}
         <div style={{ marginTop: 20 }}>
           <button type="button" onClick={generateCode} style={{ marginRight: 10 }}>Generate Code</button>
           <button type="button" onClick={clearAll} style={{ marginRight: 10 }}>Clear</button>
-          <button type="button" onClick={downloadCode} disabled={!generatedCode}>Download Code</button>
+          <button type="button" onClick={downloadCode} disabled={!generatedCode}>Download Service Code</button>
         </div>
 
         {generatedCode && (
             <fieldset style={{ marginTop: 20 }}>
-              <legend>Generated Java Code</legend>
+              <legend>Generated Java Service Code</legend>
               <textarea
                   rows={25}
                   readOnly
                   value={generatedCode}
                   style={{ width: "100%", fontFamily: "monospace" }}
               />
+            </fieldset>
+        )}
+
+        {stepDefinition && (
+            <fieldset style={{ marginTop: 20 }}>
+              <legend>Step Definition File</legend>
+              <textarea
+                  rows={25}
+                  readOnly
+                  value={stepDefinition}
+                  style={{ width: "100%", fontFamily: "monospace" }}
+              />
+              <button type="button" onClick={downloadStepDefinition} style={{ marginTop: 10 }}>Download Step Definition</button>
+            </fieldset>
+        )}
+
+        {featureFile && (
+            <fieldset style={{ marginTop: 20 }}>
+              <legend>Feature File</legend>
+              <textarea
+                  rows={15}
+                  readOnly
+                  value={featureFile}
+                  style={{ width: "100%", fontFamily: "monospace" }}
+              />
+              <button type="button" onClick={downloadFeatureFile} style={{ marginTop: 10 }}>Download Feature File</button>
             </fieldset>
         )}
       </div>
