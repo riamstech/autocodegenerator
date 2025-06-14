@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { tomorrow } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 
 function App() {
   const [serviceName, setServiceName] = useState("");
@@ -361,6 +363,7 @@ public class ${capitalize(serviceName)}Steps {
               value={serviceName}
               onChange={(e) => setServiceName(e.target.value)}
               placeholder="Enter service name"
+              style={{ width: "100%", padding: 8 }}
           />
         </div>
 
@@ -371,12 +374,17 @@ public class ${capitalize(serviceName)}Steps {
               value={apiEndpoint}
               onChange={(e) => setApiEndpoint(e.target.value)}
               placeholder="/objects"
+              style={{ width: "100%", padding: 8 }}
           />
         </div>
 
         <div style={{ marginBottom: 15 }}>
           <label>Request Type</label>
-          <select value={requestType} onChange={(e) => setRequestType(e.target.value)}>
+          <select
+              value={requestType}
+              onChange={(e) => setRequestType(e.target.value)}
+              style={{ width: "100%", padding: 8 }}
+          >
             <option>GET</option>
             <option>POST</option>
             <option>PUT</option>
@@ -387,34 +395,53 @@ public class ${capitalize(serviceName)}Steps {
           </select>
         </div>
 
-        <fieldset>
+        <fieldset style={{ marginBottom: 15, padding: 15 }}>
           <legend>Request Headers</legend>
-          <div style={{ marginBottom: 8 }}>
+          <div style={{ marginBottom: 8, display: "flex", gap: 8 }}>
             <input
                 type="text"
                 placeholder="Header Key"
                 value={headerKey}
                 onChange={(e) => setHeaderKey(e.target.value)}
+                style={{ flex: 1, padding: 8 }}
             />
             <input
                 type="text"
                 placeholder="Header Value"
                 value={headerValue}
                 onChange={(e) => setHeaderValue(e.target.value)}
+                style={{ flex: 1, padding: 8 }}
             />
-            <button type="button" onClick={addHeader}>Add Header</button>
+            <button
+                type="button"
+                onClick={addHeader}
+                style={{ padding: "8px 16px" }}
+            >
+              Add Header
+            </button>
           </div>
           <textarea
               rows={3}
               placeholder="Bulk add headers (key:value per line)"
               value={bulkHeaders}
               onChange={(e) => setBulkHeaders(e.target.value)}
-              style={{ width: "100%", fontFamily: "monospace", marginBottom: 10 }}
+              style={{
+                width: "100%",
+                fontFamily: "monospace",
+                marginBottom: 10,
+                padding: 8
+              }}
           />
-          <button type="button" onClick={bulkAddHeaders}>Bulk Add Headers</button>
+          <button
+              type="button"
+              onClick={bulkAddHeaders}
+              style={{ padding: "8px 16px" }}
+          >
+            Bulk Add Headers
+          </button>
 
           {headers.length > 0 && (
-              <ul>
+              <ul style={{ marginTop: 10 }}>
                 {headers.map((h, i) => (
                     <li key={i}><b>{h.key}</b>: {h.value}</li>
                 ))}
@@ -422,92 +449,180 @@ public class ${capitalize(serviceName)}Steps {
           )}
         </fieldset>
 
-        <fieldset>
+        <fieldset style={{ marginBottom: 15, padding: 15 }}>
           <legend>Request Body</legend>
           <textarea
               rows={10}
               value={requestBody}
               onChange={(e) => setRequestBody(e.target.value)}
               placeholder="Enter JSON request body here"
-              style={{ width: "100%", fontFamily: "monospace" }}
+              style={{
+                width: "100%",
+                fontFamily: "monospace",
+                padding: 8
+              }}
           />
-          <button type="button" onClick={() => formatJson(requestBody, setRequestBody)}>Format Request JSON</button>
+          <button
+              type="button"
+              onClick={() => formatJson(requestBody, setRequestBody)}
+              style={{ marginTop: 8, padding: "8px 16px" }}
+          >
+            Format Request JSON
+          </button>
         </fieldset>
 
-        <fieldset>
+        <fieldset style={{ marginBottom: 15, padding: 15 }}>
           <legend>Success Response Body</legend>
           <textarea
               rows={10}
               value={responseBody}
               onChange={(e) => setResponseBody(e.target.value)}
               placeholder="Enter JSON success response body here"
-              style={{ width: "100%", fontFamily: "monospace" }}
+              style={{
+                width: "100%",
+                fontFamily: "monospace",
+                padding: 8
+              }}
           />
-          <button type="button" onClick={() => formatJson(responseBody, setResponseBody)}>Format Response JSON</button>
+          <button
+              type="button"
+              onClick={() => formatJson(responseBody, setResponseBody)}
+              style={{ marginTop: 8, padding: "8px 16px" }}
+          >
+            Format Response JSON
+          </button>
         </fieldset>
 
-        <fieldset>
+        <fieldset style={{ marginBottom: 15, padding: 15 }}>
           <legend>Error Response Body</legend>
           <textarea
               rows={10}
               value={errorResponseBody}
               onChange={(e) => setErrorResponseBody(e.target.value)}
               placeholder="Enter JSON error response body here"
-              style={{ width: "100%", fontFamily: "monospace" }}
+              style={{
+                width: "100%",
+                fontFamily: "monospace",
+                padding: 8
+              }}
           />
-          <button type="button" onClick={() => formatJson(errorResponseBody, setErrorResponseBody)}>Format Error Response JSON</button>
+          <button
+              type="button"
+              onClick={() => formatJson(errorResponseBody, setErrorResponseBody)}
+              style={{ marginTop: 8, padding: "8px 16px" }}
+          >
+            Format Error Response JSON
+          </button>
         </fieldset>
 
-        <div style={{ marginTop: 10 }}>
+        <div style={{ marginBottom: 15 }}>
           <label>Response Code</label>
-          <select value={responseCode} onChange={(e) => setResponseCode(e.target.value)}>
+          <select
+              value={responseCode}
+              onChange={(e) => setResponseCode(e.target.value)}
+              style={{ width: "100%", padding: 8 }}
+          >
             {[100, 101, 102, 200, 201, 202, 204, 400, 401, 403, 404, 500, 502, 503].map((code) => (
                 <option key={code} value={code}>{code}</option>
             ))}
           </select>
         </div>
 
-        <div style={{ marginTop: 20 }}>
-          <button type="button" onClick={generateCode} style={{ marginRight: 10 }}>Generate Code</button>
-          <button type="button" onClick={clearAll} style={{ marginRight: 10 }}>Clear</button>
-          <button type="button" onClick={downloadCode} disabled={!generatedCode}>Download Service Code</button>
+        <div style={{ marginBottom: 20, display: "flex", gap: 8 }}>
+          <button
+              type="button"
+              onClick={generateCode}
+              style={{ padding: "10px 20px", background: "#4CAF50", color: "white" }}
+          >
+            Generate Code
+          </button>
+          <button
+              type="button"
+              onClick={clearAll}
+              style={{ padding: "10px 20px" }}
+          >
+            Clear All
+          </button>
         </div>
 
         {generatedCode && (
-            <fieldset style={{ marginTop: 20 }}>
+            <fieldset style={{ marginBottom: 20, padding: 15 }}>
               <legend>Generated Java Service Code</legend>
-              <textarea
-                  rows={25}
-                  readOnly
-                  value={generatedCode}
-                  style={{ width: "100%", fontFamily: "monospace" }}
-              />
+              <SyntaxHighlighter
+                  language="java"
+                  style={tomorrow}
+                  showLineNumbers={true}
+                  customStyle={{
+                    fontSize: '14px',
+                    borderRadius: '4px',
+                    padding: '16px',
+                    overflowX: 'auto',
+                    backgroundColor: '#f5f5f5'
+                  }}
+              >
+                {generatedCode}
+              </SyntaxHighlighter>
+              <button
+                  type="button"
+                  onClick={downloadCode}
+                  style={{ marginTop: 10, padding: "8px 16px" }}
+              >
+                Download Service Code
+              </button>
             </fieldset>
         )}
 
         {stepDefinition && (
-            <fieldset style={{ marginTop: 20 }}>
+            <fieldset style={{ marginBottom: 20, padding: 15 }}>
               <legend>Step Definition File</legend>
-              <textarea
-                  rows={25}
-                  readOnly
-                  value={stepDefinition}
-                  style={{ width: "100%", fontFamily: "monospace" }}
-              />
-              <button type="button" onClick={downloadStepDefinition} style={{ marginTop: 10 }}>Download Step Definition</button>
+              <SyntaxHighlighter
+                  language="java"
+                  style={tomorrow}
+                  showLineNumbers={true}
+                  customStyle={{
+                    fontSize: '14px',
+                    borderRadius: '4px',
+                    padding: '16px',
+                    overflowX: 'auto',
+                    backgroundColor: '#f5f5f5'
+                  }}
+              >
+                {stepDefinition}
+              </SyntaxHighlighter>
+              <button
+                  type="button"
+                  onClick={downloadStepDefinition}
+                  style={{ marginTop: 10, padding: "8px 16px" }}
+              >
+                Download Step Definition
+              </button>
             </fieldset>
         )}
 
         {featureFile && (
-            <fieldset style={{ marginTop: 20 }}>
+            <fieldset style={{ marginBottom: 20, padding: 15 }}>
               <legend>Feature File</legend>
-              <textarea
-                  rows={15}
-                  readOnly
-                  value={featureFile}
-                  style={{ width: "100%", fontFamily: "monospace" }}
-              />
-              <button type="button" onClick={downloadFeatureFile} style={{ marginTop: 10 }}>Download Feature File</button>
+              <SyntaxHighlighter
+                  language="gherkin"
+                  style={tomorrow}
+                  showLineNumbers={true}
+                  customStyle={{
+                    fontSize: '14px',
+                    borderRadius: '4px',
+                    padding: '16px',
+                    overflowX: 'auto',
+                    backgroundColor: '#f5f5f5'
+                  }}
+              >
+                {featureFile}
+              </SyntaxHighlighter>
+              <button
+                  type="button"
+                  onClick={downloadFeatureFile}
+                  style={{ marginTop: 10, padding: "8px 16px" }}
+              >
+                Download Feature File
+              </button>
             </fieldset>
         )}
       </div>
