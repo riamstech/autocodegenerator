@@ -248,6 +248,7 @@ import io.restassured.http.Headers;
 import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 public class ${capitalize(serviceName)} extends BaseService {
     String endpointUrl = "${apiEndpoint}";
@@ -272,12 +273,12 @@ ${methodCode}
     public ErrorResponseData getErrorResponseData(Response response) {
         return response.as(ErrorResponseData.class);
     }
-}`;
+`;
 
         // Generate Step Definition
         const stepDefCode = `import io.cucumber.java.en.*;
 import io.restassured.response.Response;
-import static org.junit.Assert.*;
+import org.testng.Assert;
 
 public class ${capitalize(serviceName)}Steps {
     private ${capitalize(serviceName)} ${serviceName.toLowerCase()} = new ${capitalize(serviceName)}();
@@ -292,31 +293,31 @@ public class ${capitalize(serviceName)}Steps {
 
     @Then("the user should get status code as {int}")
     public void verifyStatusCode(int expectedStatusCode) {
-        assertEquals(expectedStatusCode, response.getStatusCode());
+        Assert.assertEquals(expectedStatusCode, response.getStatusCode());
     }
 
     @Then("the user verify the success schema of the response returned as expected for ${serviceName} service endpoint")
     public void verifySuccessSchema() {
         successResponse = ${serviceName.toLowerCase()}.getSuccessResponseData(response);
-        assertNotNull(successResponse);
+        Assert.assertNotNull(successResponse);
     }
 
     @And("the user verify the success response body should contain valid data for ${serviceName} service endpoint")
     public void verifySuccessResponseBody() {
         // Add specific assertions for success response fields here
-        // Example: assertNotNull(successResponse.getFieldName());
+        // Example: Assert.assertNotNull(successResponse.getFieldName());
     }
 
     @Then("the user verify the error schema of the response returned as expected for ${serviceName} service endpoint")
     public void verifyErrorSchema() {
         errorResponse = ${serviceName.toLowerCase()}.getErrorResponseData(response);
-        assertNotNull(errorResponse);
+        Assert.assertNotNull(errorResponse);
     }
 
     @And("the user verify the error response body should contain valid data for ${serviceName} service endpoint")
     public void verifyErrorResponseBody() {
         // Add specific assertions for error response fields here
-        // Example: assertNotNull(errorResponse.getErrorMessage());
+        // Example: Assert.assertNotNull(errorResponse.getErrorMessage());
     }
 }`;
 
@@ -337,11 +338,11 @@ public class ${capitalize(serviceName)}Steps {
 
         setGeneratedCode(
             [
-                "import java.util.List;\n",
+                mainCode,
                 requestPojo ? requestPojo + "\n\n" : "",
                 responsePojo ? responsePojo + "\n\n" : "",
-                errorResponsePojo ? errorResponsePojo + "\n\n" : "",
-                mainCode,
+                errorResponsePojo ? errorResponsePojo: "",
+                "\n}",
             ].join("")
         );
 
