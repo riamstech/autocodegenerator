@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
-import { tomorrow } from 'react-syntax-highlighter/dist/cjs/styles/prism';
-import { atomDark } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
+import { FaEdit, FaPlus, FaFileImport } from 'react-icons/fa';
 
 function App() {
   const [serviceName, setServiceName] = useState("");
@@ -289,8 +288,6 @@ public class ${capitalize(serviceName)}Steps {
     }
 }`;
 
-
-
     // Generate Feature File
     const featureCode = `Feature: ${capitalize(serviceName)} API Tests
 
@@ -319,7 +316,6 @@ public class ${capitalize(serviceName)}Steps {
     setStepDefinition(stepDefCode);
     setFeatureFile(featureCode);
   };
-
 
   const downloadCode = () => {
     if (!generatedCode) {
@@ -473,7 +469,7 @@ public class ${capitalize(serviceName)}Steps {
               <div style={{ position: 'relative' }}>
                 <SyntaxHighlighter
                     language="json"
-                    style={vscDarkPlus }
+                    style={vscDarkPlus}
                     customStyle={{
                       fontSize: '14px',
                       borderRadius: '4px',
@@ -490,15 +486,19 @@ public class ${capitalize(serviceName)}Steps {
                       position: 'absolute',
                       top: '10px',
                       right: '10px',
-                      padding: '4px 8px',
+                      padding: '6px',
                       background: '#ff4444',
                       color: 'white',
                       border: 'none',
                       borderRadius: '4px',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
                     }}
+                    title="Edit"
                 >
-                  Edit
+                  <FaEdit size={14} />
                 </button>
               </div>
           ) : (
@@ -533,7 +533,7 @@ public class ${capitalize(serviceName)}Steps {
               <div style={{ position: 'relative' }}>
                 <SyntaxHighlighter
                     language="json"
-                    style={vscDarkPlus }
+                    style={vscDarkPlus}
                     customStyle={{
                       fontSize: '14px',
                       borderRadius: '4px',
@@ -550,15 +550,19 @@ public class ${capitalize(serviceName)}Steps {
                       position: 'absolute',
                       top: '10px',
                       right: '10px',
-                      padding: '4px 8px',
+                      padding: '6px',
                       background: '#ff4444',
                       color: 'white',
                       border: 'none',
                       borderRadius: '4px',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
                     }}
+                    title="Edit"
                 >
-                  Edit
+                  <FaEdit size={14} />
                 </button>
               </div>
           ) : (
@@ -593,7 +597,7 @@ public class ${capitalize(serviceName)}Steps {
               <div style={{ position: 'relative' }}>
                 <SyntaxHighlighter
                     language="json"
-                    style={vscDarkPlus }
+                    style={vscDarkPlus}
                     customStyle={{
                       fontSize: '14px',
                       borderRadius: '4px',
@@ -610,15 +614,19 @@ public class ${capitalize(serviceName)}Steps {
                       position: 'absolute',
                       top: '10px',
                       right: '10px',
-                      padding: '4px 8px',
+                      padding: '6px',
                       background: '#ff4444',
                       color: 'white',
                       border: 'none',
                       borderRadius: '4px',
-                      cursor: 'pointer'
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
                     }}
+                    title="Edit"
                 >
-                  Edit
+                  <FaEdit size={14} />
                 </button>
               </div>
           ) : (
@@ -682,7 +690,7 @@ public class ${capitalize(serviceName)}Steps {
               <legend>Generated Java Service Code</legend>
               <SyntaxHighlighter
                   language="java"
-                  style={vscDarkPlus }
+                  style={vscDarkPlus}
                   showLineNumbers={true}
                   customStyle={{
                     fontSize: '14px',
@@ -709,7 +717,7 @@ public class ${capitalize(serviceName)}Steps {
               <legend>Step Definition File</legend>
               <SyntaxHighlighter
                   language="java"
-                  style={vscDarkPlus }
+                  style={vscDarkPlus}
                   showLineNumbers={true}
                   customStyle={{
                     fontSize: '14px',
@@ -736,7 +744,7 @@ public class ${capitalize(serviceName)}Steps {
               <legend>Feature File</legend>
               <SyntaxHighlighter
                   language="gherkin"
-                  style={vscDarkPlus }
+                  style={vscDarkPlus}
                   showLineNumbers={true}
                   customStyle={{
                     fontSize: '14px',
