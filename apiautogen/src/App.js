@@ -350,7 +350,7 @@ public class ${capitalize(serviceName)}Steps {
         setFeatureFile(featureCode);
 
         // Show success notification
-        toast.success('Code has been generated successfully!', {
+        toast.success('Code has been generated successfully! Please scroll down & look for generated code', {
             position: "bottom-right",
             autoClose: 3000,
             hideProgressBar: false,
