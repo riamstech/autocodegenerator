@@ -351,7 +351,7 @@ public class ${capitalize(serviceName)}Steps {
 
         // Show success notification
         toast.success('Code has been generated successfully! Please scroll down & look for generated code', {
-            position: "bottom-right",
+            position: "bottom-center",
             autoClose: 3000,
             hideProgressBar: false,
             closeOnClick: true,
@@ -436,7 +436,7 @@ public class ${capitalize(serviceName)}Steps {
                 pauseOnHover
             />
 
-            <h2>API Code Generator</h2>
+            <h2>API Automation Code Generator</h2>
 
             <div style={{ marginBottom: 15 }}>
                 <label>Service Name</label>
