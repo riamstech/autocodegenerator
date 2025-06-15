@@ -1,7 +1,9 @@
 import React, { useState } from "react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
-import { FaEdit, FaPlus, FaFileImport } from 'react-icons/fa';
+import { FaEdit, FaPlus, FaFileImport, FaCode, FaTrash, FaDownload } from 'react-icons/fa';
+import { BiSelectMultiple } from "react-icons/bi";
+
 
 function App() {
   const [serviceName, setServiceName] = useState("");
@@ -429,30 +431,54 @@ public class ${capitalize(serviceName)}Steps {
             <button
                 type="button"
                 onClick={addHeader}
-                style={{ padding: "8px 16px" }}
+                style={{
+                  padding: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: "#4CAF50",
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer"
+                }}
+                title="Add Header"
             >
-              Add Header
+              <FaPlus />
             </button>
           </div>
-          <textarea
-              rows={3}
-              placeholder="Bulk add headers (key:value per line)"
-              value={bulkHeaders}
-              onChange={(e) => setBulkHeaders(e.target.value)}
-              style={{
-                width: "100%",
-                fontFamily: "monospace",
-                marginBottom: 10,
-                padding: 8
-              }}
-          />
-          <button
-              type="button"
-              onClick={bulkAddHeaders}
-              style={{ padding: "8px 16px" }}
-          >
-            Bulk Add Headers
-          </button>
+          <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+            <textarea
+                rows={3}
+                placeholder="Bulk add headers (key:value per line)"
+                value={bulkHeaders}
+                onChange={(e) => setBulkHeaders(e.target.value)}
+                style={{
+                  width: "100%",
+                  fontFamily: "monospace",
+                  padding: 8
+                }}
+            />
+            <button
+                type="button"
+                onClick={bulkAddHeaders}
+                style={{
+                  padding: "8px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  background: '#ff4444',
+                  color: "white",
+                  border: "none",
+                  borderRadius: "4px",
+                  cursor: "pointer",
+                  alignSelf: "flex-start"
+                }}
+                title="Bulk Import Headers"
+            >
+              <BiSelectMultiple size={16} />
+            </button>
+          </div>
 
           {headers.length > 0 && (
               <ul style={{ marginTop: 10 }}>
@@ -672,16 +698,36 @@ public class ${capitalize(serviceName)}Steps {
           <button
               type="button"
               onClick={generateCode}
-              style={{ padding: "10px 20px", background: "#4CAF50", color: "white" }}
+              style={{
+                padding: "10px 16px",
+                background: "#4CAF50",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px"
+              }}
           >
-            Generate Code
+            <FaCode /> Generate Code
           </button>
           <button
               type="button"
               onClick={clearAll}
-              style={{ padding: "10px 20px" }}
+              style={{
+                padding: "10px 16px",
+                background: "#f44336",
+                color: "white",
+                border: "none",
+                borderRadius: "4px",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px"
+              }}
           >
-            Clear All
+            <FaTrash /> Clear All
           </button>
         </div>
 
@@ -705,9 +751,15 @@ public class ${capitalize(serviceName)}Steps {
               <button
                   type="button"
                   onClick={downloadCode}
-                  style={{ marginTop: 10, padding: "8px 16px" }}
+                  style={{
+                    marginTop: 10,
+                    padding: "8px 16px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px"
+                  }}
               >
-                Download Service Code
+                <FaDownload /> Download Service Code
               </button>
             </fieldset>
         )}
@@ -732,9 +784,15 @@ public class ${capitalize(serviceName)}Steps {
               <button
                   type="button"
                   onClick={downloadStepDefinition}
-                  style={{ marginTop: 10, padding: "8px 16px" }}
+                  style={{
+                    marginTop: 10,
+                    padding: "8px 16px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px"
+                  }}
               >
-                Download Step Definition
+                <FaDownload /> Download Step Definition
               </button>
             </fieldset>
         )}
@@ -759,9 +817,15 @@ public class ${capitalize(serviceName)}Steps {
               <button
                   type="button"
                   onClick={downloadFeatureFile}
-                  style={{ marginTop: 10, padding: "8px 16px" }}
+                  style={{
+                    marginTop: 10,
+                    padding: "8px 16px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px"
+                  }}
               >
-                Download Feature File
+                <FaDownload /> Download Feature File
               </button>
             </fieldset>
         )}
