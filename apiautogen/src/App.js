@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
-import { FaEdit, FaPlus, FaFileImport, FaCode, FaTrash, FaDownload } from 'react-icons/fa';
+import { FaEdit, FaPlus, FaCode, FaTrash, FaDownload } from 'react-icons/fa';
 import { BiSelectMultiple } from "react-icons/bi";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
