@@ -30,6 +30,10 @@ function App() {
         error: 'edit'
     });
 
+    const [selectableRequestTree, setSelectableRequestTree] = useState({});
+    const [selectedRequestTree, setSelectedRequestTree] = useState({});
+
+
     const addHeader = () => {
         if (headerKey.trim() && headerValue.trim()) {
             setHeaders([...headers, { key: headerKey.trim(), value: headerValue.trim() }]);
@@ -88,10 +92,26 @@ function App() {
                 });
                 return;
             }
+
             const parsed = JSON.parse(jsonStr);
             const pretty = JSON.stringify(parsed, null, 2);
             setter(pretty);
-            setViewMode({...viewMode, [field]: 'view'});
+            setViewMode({ ...viewMode, [field]: 'view' });
+
+            if (field === 'request' && typeof parsed === 'object') {
+                const buildTree = (obj) => {
+                    if (typeof obj !== 'object' || obj === null) return true;
+                    const tree = {};
+                    for (const key in obj) {
+                        tree[key] = buildTree(obj[key]);
+                    }
+                    return tree;
+                };
+                const fullTree = buildTree(parsed);
+                setSelectableRequestTree(fullTree);
+                setSelectedRequestTree(JSON.parse(JSON.stringify(fullTree))); // all checked initially
+            }
+
         } catch (e) {
             Swal.fire({
                 icon: 'error',
@@ -100,6 +120,48 @@ function App() {
             });
         }
     };
+
+    const renderFieldCheckboxes = (tree, selectedTree, path = []) => {
+        return Object.keys(tree).map((key) => {
+            const currentPath = [...path, key];
+            const currentSelected = selectedTree[key];
+            const isLeaf = tree[key] === true;
+
+            return (
+                <li key={currentPath.join('.')}>
+                    <label>
+                        <input
+                            type="checkbox"
+                            checked={!!currentSelected}
+                            onChange={() => {
+                                const updateTree = (obj, keys) => {
+                                    if (keys.length === 1) {
+                                        obj[keys[0]] = !obj[keys[0]];
+                                    } else {
+                                        obj[keys[0]] = { ...obj[keys[0]] };
+                                        updateTree(obj[keys[0]], keys.slice(1));
+                                    }
+                                };
+                                const newTree = structuredClone(selectedRequestTree);
+                                updateTree(newTree, currentPath);
+                                setSelectedRequestTree(newTree);
+                            }}
+                        />
+                        {' '}
+                        {key}
+                    </label>
+
+                    {!isLeaf && currentSelected && typeof currentSelected === 'object' && (
+                        <ul style={{ marginLeft: 16 }}>
+                            {renderFieldCheckboxes(tree[key], currentSelected, currentPath)}
+                        </ul>
+                    )}
+                </li>
+            );
+        });
+    };
+
+
 
     const toggleEditMode = (field) => {
         setViewMode({...viewMode, [field]: 'edit'});
@@ -190,10 +252,42 @@ function App() {
         let responsePojoClasses = {};
         let errorResponsePojoClasses = {};
 
+        const filterJsonBySelection = (obj, tree) => {
+            if (typeof obj !== 'object' || obj === null || typeof tree !== 'object') return obj;
+            const result = {};
+            for (const key in obj) {
+                if (tree[key]) {
+                    if (typeof tree[key] === 'object') {
+                        result[key] = filterJsonBySelection(obj[key], tree[key]);
+                    } else {
+                        result[key] = obj[key];
+                    }
+                }
+            }
+            return result;
+        };
+
         try {
-            requestPojoClasses = requestBody.trim()
-                ? generateClass("RequestBody", JSON.parse(requestBody))
-                : {};
+            // const rawRequestObj = JSON.parse(requestBody);
+            const rawRequestObj = JSON.parse(requestBody);
+            requestPojoClasses = generateClass("RequestBody", rawRequestObj);
+            const extractDefaults = (obj, selectionTree) => {
+                if (typeof obj !== 'object' || obj === null || typeof selectionTree !== 'object') return obj;
+                const result = {};
+                for (const key in obj) {
+                    if (selectionTree[key]) {
+                        if (typeof selectionTree[key] === 'object') {
+                            result[key] = extractDefaults(obj[key], selectionTree[key]);
+                        } else {
+                            result[key] = obj[key];
+                        }
+                    }
+                }
+                return result;
+            };
+            const selectedDefaults = extractDefaults(rawRequestObj, selectedRequestTree);
+            console.log("Defaults to apply from selection:", selectedDefaults);
+
         } catch {
             Swal.fire({
                 icon: 'error',
@@ -202,6 +296,7 @@ function App() {
             });
             return;
         }
+
 
         try {
             responsePojoClasses = responseBody.trim()
@@ -559,39 +654,20 @@ public class ${capitalize(serviceName)}Steps {
                 <legend>Request Body</legend>
                 {viewMode.request === 'view' ? (
                     <div style={{ position: 'relative' }}>
-                        <SyntaxHighlighter
-                            language="json"
-                            style={vscDarkPlus}
-                            customStyle={{
-                                fontSize: '14px',
-                                borderRadius: '4px',
-                                padding: '16px',
-                                overflowX: 'auto',
-                                backgroundColor: '#1e1e1e'
-                            }}
-                        >
-                            {requestBody}
-                        </SyntaxHighlighter>
-                        <button
-                            onClick={() => toggleEditMode('request')}
-                            style={{
-                                position: 'absolute',
-                                top: '10px',
-                                right: '10px',
-                                padding: '6px',
-                                background: '#ff4444',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center'
-                            }}
-                            title="Edit"
-                        >
-                            <FaEdit size={14} />
-                        </button>
+                        <pre style={{ userSelect: 'text', margin: 0 }}>
+                            <SyntaxHighlighter language="json" style={vscDarkPlus}>
+                                {requestBody}
+                            </SyntaxHighlighter>
+                        </pre>
+                        <button onClick={() => toggleEditMode('request')} style={{ position: 'absolute', top: 10, right: 10 }}>Edit</button>
+                        {Object.keys(selectableRequestTree).length > 0 && (
+                            <div style={{ marginTop: '10px' }}>
+                                <strong>Select Fields:</strong>
+                                <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
+                                    {renderFieldCheckboxes(selectableRequestTree, selectedRequestTree)}
+                                </ul>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <textarea
@@ -599,24 +675,12 @@ public class ${capitalize(serviceName)}Steps {
                         value={requestBody}
                         onChange={(e) => setRequestBody(e.target.value)}
                         placeholder="Enter JSON request body here"
-                        style={{
-                            width: "100%",
-                            fontFamily: "monospace",
-                            padding: 8
-                        }}
+                        style={{ width: "100%", fontFamily: "monospace", padding: 8 }}
                     />
                 )}
-                <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
-                    {viewMode.request === 'edit' && (
-                        <button
-                            type="button"
-                            onClick={() => formatJson(requestBody, setRequestBody, 'request')}
-                            style={{ padding: "8px 16px" }}
-                        >
-                            Format JSON
-                        </button>
-                    )}
-                </div>
+                {viewMode.request === 'edit' && (
+                    <button onClick={() => formatJson(requestBody, setRequestBody, 'request')}>Format JSON</button>
+                )}
             </fieldset>
 
             <fieldset style={{ marginBottom: 15, padding: 15 }}>
