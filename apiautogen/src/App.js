@@ -6,6 +6,7 @@ import { BiSelectMultiple } from "react-icons/bi";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Swal from 'sweetalert2';
+import ImportFromSwagger from './ImportFromSwagger';
 
 function App() {
     const [serviceName, setServiceName] = useState("");
@@ -91,7 +92,7 @@ function App() {
             const parsed = JSON.parse(jsonStr);
             const pretty = JSON.stringify(parsed, null, 2);
             setter(pretty);
-            setViewMode({...viewMode, [field]: 'view'});
+            setViewMode({ ...viewMode, [field]: 'view' });
         } catch (e) {
             Swal.fire({
                 icon: 'error',
@@ -102,7 +103,7 @@ function App() {
     };
 
     const toggleEditMode = (field) => {
-        setViewMode({...viewMode, [field]: 'edit'});
+        setViewMode({ ...viewMode, [field]: 'edit' });
     };
 
     const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
@@ -341,7 +342,7 @@ public class ${capitalize(serviceName)}Steps {
                 mainCode,
                 requestPojo ? requestPojo + "\n\n" : "",
                 responsePojo ? responsePojo + "\n\n" : "",
-                errorResponsePojo ? errorResponsePojo: "",
+                errorResponsePojo ? errorResponsePojo : "",
                 "\n}",
             ].join("")
         );
@@ -359,6 +360,26 @@ public class ${capitalize(serviceName)}Steps {
             draggable: true,
             progress: undefined,
         });
+    };
+
+    const handleData = (data) => {
+        console.log(data);
+
+        console.log(data.details.parameters);
+
+        let requestBody = JSON.stringify(data.details.parameters);
+        setServiceName(data.details.summary);
+        setApiEndpoint(data.path);
+        setRequestType(data.method);
+        setHeaderKey("");
+        setHeaderValue("");
+        setHeaders([]);
+        setBulkHeaders("");
+        setRequestBody(requestBody);
+        setResponseBody("");
+        setErrorResponseBody("");
+        setResponseCode("200");
+        
     };
 
     const downloadCode = () => {
@@ -438,6 +459,9 @@ public class ${capitalize(serviceName)}Steps {
 
             <h2>API Automation Code Generator</h2>
 
+            <div style={{ textAlign: 'right', marginBottom: '10px' }}>
+                <ImportFromSwagger onData={handleData} />
+            </div>
             <div style={{ marginBottom: 15 }}>
                 <label>Service Name</label>
                 <input
@@ -514,17 +538,17 @@ public class ${capitalize(serviceName)}Steps {
                     </button>
                 </div>
                 <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-            <textarea
-                rows={3}
-                placeholder="Bulk add headers (key:value per line)"
-                value={bulkHeaders}
-                onChange={(e) => setBulkHeaders(e.target.value)}
-                style={{
-                    width: "100%",
-                    fontFamily: "monospace",
-                    padding: 8
-                }}
-            />
+                    <textarea
+                        rows={3}
+                        placeholder="Bulk add headers (key:value per line)"
+                        value={bulkHeaders}
+                        onChange={(e) => setBulkHeaders(e.target.value)}
+                        style={{
+                            width: "100%",
+                            fontFamily: "monospace",
+                            padding: 8
+                        }}
+                    />
                     <button
                         type="button"
                         onClick={bulkAddHeaders}
