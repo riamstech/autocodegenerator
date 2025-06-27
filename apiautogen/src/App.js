@@ -6,6 +6,7 @@ import { BiSelectMultiple } from "react-icons/bi";
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import Swal from 'sweetalert2';
+import ImportFromSwagger from './ImportFromSwagger';
 
 function App() {
     const [serviceName, setServiceName] = useState("");
@@ -29,10 +30,6 @@ function App() {
         response: 'edit',
         error: 'edit'
     });
-
-    const [selectableRequestTree, setSelectableRequestTree] = useState({});
-    const [selectedRequestTree, setSelectedRequestTree] = useState({});
-
 
     const addHeader = () => {
         if (headerKey.trim() && headerValue.trim()) {
@@ -92,26 +89,10 @@ function App() {
                 });
                 return;
             }
-
             const parsed = JSON.parse(jsonStr);
             const pretty = JSON.stringify(parsed, null, 2);
             setter(pretty);
             setViewMode({ ...viewMode, [field]: 'view' });
-
-            if (field === 'request' && typeof parsed === 'object') {
-                const buildTree = (obj) => {
-                    if (typeof obj !== 'object' || obj === null) return true;
-                    const tree = {};
-                    for (const key in obj) {
-                        tree[key] = buildTree(obj[key]);
-                    }
-                    return tree;
-                };
-                const fullTree = buildTree(parsed);
-                setSelectableRequestTree(fullTree);
-                setSelectedRequestTree(JSON.parse(JSON.stringify(fullTree))); // all checked initially
-            }
-
         } catch (e) {
             Swal.fire({
                 icon: 'error',
@@ -121,50 +102,8 @@ function App() {
         }
     };
 
-    const renderFieldCheckboxes = (tree, selectedTree, path = []) => {
-        return Object.keys(tree).map((key) => {
-            const currentPath = [...path, key];
-            const currentSelected = selectedTree[key];
-            const isLeaf = tree[key] === true;
-
-            return (
-                <li key={currentPath.join('.')}>
-                    <label>
-                        <input
-                            type="checkbox"
-                            checked={!!currentSelected}
-                            onChange={() => {
-                                const updateTree = (obj, keys) => {
-                                    if (keys.length === 1) {
-                                        obj[keys[0]] = !obj[keys[0]];
-                                    } else {
-                                        obj[keys[0]] = { ...obj[keys[0]] };
-                                        updateTree(obj[keys[0]], keys.slice(1));
-                                    }
-                                };
-                                const newTree = structuredClone(selectedRequestTree);
-                                updateTree(newTree, currentPath);
-                                setSelectedRequestTree(newTree);
-                            }}
-                        />
-                        {' '}
-                        {key}
-                    </label>
-
-                    {!isLeaf && currentSelected && typeof currentSelected === 'object' && (
-                        <ul style={{ marginLeft: 16 }}>
-                            {renderFieldCheckboxes(tree[key], currentSelected, currentPath)}
-                        </ul>
-                    )}
-                </li>
-            );
-        });
-    };
-
-
-
     const toggleEditMode = (field) => {
-        setViewMode({...viewMode, [field]: 'edit'});
+        setViewMode({ ...viewMode, [field]: 'edit' });
     };
 
     const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
@@ -229,8 +168,6 @@ function App() {
         classes[name] = classCode;
         return classes;
     }
-    let selectedDefaultsJava = "";
-    let selectedDefaultsObjectNodeCode = "";
 
     const generateCode = () => {
         if (!serviceName.trim()) {
@@ -254,91 +191,10 @@ function App() {
         let responsePojoClasses = {};
         let errorResponsePojoClasses = {};
 
-        const filterJsonBySelection = (obj, tree) => {
-            if (typeof obj !== 'object' || obj === null || typeof tree !== 'object') return obj;
-            const result = {};
-            for (const key in obj) {
-                if (tree[key]) {
-                    if (typeof tree[key] === 'object') {
-                        result[key] = filterJsonBySelection(obj[key], tree[key]);
-                    } else {
-                        result[key] = obj[key];
-                    }
-                }
-            }
-            return result;
-        };
-
         try {
-            // const rawRequestObj = JSON.parse(requestBody);
-            const rawRequestObj = JSON.parse(requestBody);
-            requestPojoClasses = generateClass("RequestBody", rawRequestObj);
-            const extractDefaults = (obj, selectionTree) => {
-                if (typeof obj !== 'object' || obj === null || typeof selectionTree !== 'object') return obj;
-                const result = {};
-                for (const key in obj) {
-                    if (selectionTree[key]) {
-                        if (typeof selectionTree[key] === 'object') {
-                            result[key] = extractDefaults(obj[key], selectionTree[key]);
-                        } else {
-                            result[key] = obj[key];
-                        }
-                    }
-                }
-                return result;
-            };
-            const selectedDefaults = extractDefaults(rawRequestObj, selectedRequestTree);
-            console.log("Defaults to apply from selection:", selectedDefaults);
-            //+++++++++++++++++ Hashmap implementation+++++++++++++++++++++++
-            // const convertToJavaMap = (obj, indent = "    ") => {
-            //     if (typeof obj !== 'object' || obj === null) return "null";
-            //
-            //     const entries = Object.entries(obj)
-            //         .map(([key, value]) => {
-            //             const javaKey = `"${key}"`;
-            //             let javaValue;
-            //             if (typeof value === "string") {
-            //                 javaValue = `"${value}"`;
-            //             } else if (typeof value === "number" || typeof value === "boolean") {
-            //                 javaValue = value;
-            //             } else if (typeof value === "object") {
-            //                 javaValue = convertToJavaMap(value, indent + "    ");
-            //                 javaValue = `new HashMap<String, Object>() {{\n${javaValue}\n${indent}}}`;
-            //             }
-            //             return `${indent}put(${javaKey}, ${javaValue});`;
-            //         })
-            //         .join("\n");
-            //
-            //     return entries;
-            // };
-            // selectedDefaultsJava = convertToJavaMap(selectedDefaults);
-            //+++++++++++++++++ Hashmap implementation+++++++++++++++++++++++
-
-            const convertToObjectNodeJavaCode = (obj, varName = "selectedDefaults", indent = "        ") => {
-                const lines = [];
-                const declareNestedNode = (obj, parentVar, baseIndent) => {
-                    for (const [key, value] of Object.entries(obj)) {
-                        const escapedKey = `"${key}"`;
-                        if (typeof value === "string") {
-                            lines.push(`${baseIndent}${parentVar}.put(${escapedKey}, "${value}");`);
-                        } else if (typeof value === "number" || typeof value === "boolean") {
-                            lines.push(`${baseIndent}${parentVar}.put(${escapedKey}, ${value});`);
-                        } else if (typeof value === "object" && value !== null) {
-                            const nestedVar = `${parentVar}_${key}`;
-                            lines.push(`${baseIndent}ObjectNode ${nestedVar} = mapper.createObjectNode();`);
-                            declareNestedNode(value, nestedVar, baseIndent);
-                            lines.push(`${baseIndent}${parentVar}.set(${escapedKey}, ${nestedVar});`);
-                        }
-                    }
-                };
-
-                lines.push(`selectedDefaults = mapper.createObjectNode();`);
-                declareNestedNode(obj, "selectedDefaults", indent);
-                return lines.join("\n");
-            };
-            selectedDefaultsObjectNodeCode = convertToObjectNodeJavaCode(selectedDefaults);
-
-
+            requestPojoClasses = requestBody.trim()
+                ? generateClass("RequestBody", JSON.parse(requestBody))
+                : {};
         } catch {
             Swal.fire({
                 icon: 'error',
@@ -347,7 +203,6 @@ function App() {
             });
             return;
         }
-
 
         try {
             responsePojoClasses = responseBody.trim()
@@ -415,7 +270,7 @@ ${methodCode}
     public SuccessResponseData getSuccessResponseData(Response response) {
         return response.as(SuccessResponseData.class);
     }
-
+    
     public ErrorResponseData getErrorResponseData(Response response) {
         return response.as(ErrorResponseData.class);
     }
@@ -423,32 +278,10 @@ ${methodCode}
 
         // Generate Step Definition
         const stepDefCode = `import io.cucumber.java.en.*;
-        import com.fasterxml.jackson.databind.ObjectMapper;
-        import com.fasterxml.jackson.databind.node.ObjectNode;
-        import java.util.HashMap;
-        import java.util.Map;
-        import io.restassured.response.Response;
-    import org.testng.Assert;
+import io.restassured.response.Response;
+import org.testng.Assert;
 
 public class ${capitalize(serviceName)}Steps {
-<!--    HashMap inplementation+++++++++++++++++++++++-->
-//     private HashMap<String, Object> selectedDefaults = new HashMap<String, Object>() {{
-// ${selectedDefaultsJava}
-//     }};
-<!--   +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
-
-private ObjectMapper mapper = new ObjectMapper();
-private ObjectNode selectedDefaults;
-
-public YourStepClass() {
-    selectedDefaults = mapper.createObjectNode();
-    selectedDefaults.put("key", "value");
-}
-    public ${capitalize(serviceName)}Steps() {
-${selectedDefaultsObjectNodeCode}
-    }
-    
-    
     private ${capitalize(serviceName)} ${serviceName.toLowerCase()} = new ${capitalize(serviceName)}();
     private Response response;
     private SuccessResponseData successResponse;
@@ -509,7 +342,7 @@ ${selectedDefaultsObjectNodeCode}
                 mainCode,
                 requestPojo ? requestPojo + "\n\n" : "",
                 responsePojo ? responsePojo + "\n\n" : "",
-                errorResponsePojo ? errorResponsePojo: "",
+                errorResponsePojo ? errorResponsePojo : "",
                 "\n}",
             ].join("")
         );
@@ -527,6 +360,26 @@ ${selectedDefaultsObjectNodeCode}
             draggable: true,
             progress: undefined,
         });
+    };
+
+    const handleData = (data) => {
+        console.log(data);
+
+        console.log(data.details.parameters);
+
+        let requestBody = JSON.stringify(data.details.parameters);
+        setServiceName(data.details.summary);
+        setApiEndpoint(data.path);
+        setRequestType(data.method);
+        setHeaderKey("");
+        setHeaderValue("");
+        setHeaders([]);
+        setBulkHeaders("");
+        setRequestBody(requestBody);
+        setResponseBody("");
+        setErrorResponseBody("");
+        setResponseCode("200");
+        
     };
 
     const downloadCode = () => {
@@ -606,6 +459,9 @@ ${selectedDefaultsObjectNodeCode}
 
             <h2>API Automation Code Generator</h2>
 
+            <div style={{ textAlign: 'right', marginBottom: '10px' }}>
+                <ImportFromSwagger onData={handleData} />
+            </div>
             <div style={{ marginBottom: 15 }}>
                 <label>Service Name</label>
                 <input
@@ -682,17 +538,17 @@ ${selectedDefaultsObjectNodeCode}
                     </button>
                 </div>
                 <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-            <textarea
-                rows={3}
-                placeholder="Bulk add headers (key:value per line)"
-                value={bulkHeaders}
-                onChange={(e) => setBulkHeaders(e.target.value)}
-                style={{
-                    width: "100%",
-                    fontFamily: "monospace",
-                    padding: 8
-                }}
-            />
+                    <textarea
+                        rows={3}
+                        placeholder="Bulk add headers (key:value per line)"
+                        value={bulkHeaders}
+                        onChange={(e) => setBulkHeaders(e.target.value)}
+                        style={{
+                            width: "100%",
+                            fontFamily: "monospace",
+                            padding: 8
+                        }}
+                    />
                     <button
                         type="button"
                         onClick={bulkAddHeaders}
@@ -727,20 +583,39 @@ ${selectedDefaultsObjectNodeCode}
                 <legend>Request Body</legend>
                 {viewMode.request === 'view' ? (
                     <div style={{ position: 'relative' }}>
-                        <pre style={{ userSelect: 'text', margin: 0 }}>
-                            <SyntaxHighlighter language="json" style={vscDarkPlus}>
-                                {requestBody}
-                            </SyntaxHighlighter>
-                        </pre>
-                        <button onClick={() => toggleEditMode('request')} style={{ position: 'absolute', top: 10, right: 10 }}>Edit</button>
-                        {Object.keys(selectableRequestTree).length > 0 && (
-                            <div style={{ marginTop: '10px' }}>
-                                <strong>Select Fields:</strong>
-                                <ul style={{ listStyle: 'none', paddingLeft: 0 }}>
-                                    {renderFieldCheckboxes(selectableRequestTree, selectedRequestTree)}
-                                </ul>
-                            </div>
-                        )}
+                        <SyntaxHighlighter
+                            language="json"
+                            style={vscDarkPlus}
+                            customStyle={{
+                                fontSize: '14px',
+                                borderRadius: '4px',
+                                padding: '16px',
+                                overflowX: 'auto',
+                                backgroundColor: '#1e1e1e'
+                            }}
+                        >
+                            {requestBody}
+                        </SyntaxHighlighter>
+                        <button
+                            onClick={() => toggleEditMode('request')}
+                            style={{
+                                position: 'absolute',
+                                top: '10px',
+                                right: '10px',
+                                padding: '6px',
+                                background: '#ff4444',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center'
+                            }}
+                            title="Edit"
+                        >
+                            <FaEdit size={14} />
+                        </button>
                     </div>
                 ) : (
                     <textarea
@@ -748,12 +623,24 @@ ${selectedDefaultsObjectNodeCode}
                         value={requestBody}
                         onChange={(e) => setRequestBody(e.target.value)}
                         placeholder="Enter JSON request body here"
-                        style={{ width: "100%", fontFamily: "monospace", padding: 8 }}
+                        style={{
+                            width: "100%",
+                            fontFamily: "monospace",
+                            padding: 8
+                        }}
                     />
                 )}
-                {viewMode.request === 'edit' && (
-                    <button onClick={() => formatJson(requestBody, setRequestBody, 'request')}>Format JSON</button>
-                )}
+                <div style={{ marginTop: 8, display: 'flex', gap: 8 }}>
+                    {viewMode.request === 'edit' && (
+                        <button
+                            type="button"
+                            onClick={() => formatJson(requestBody, setRequestBody, 'request')}
+                            style={{ padding: "8px 16px" }}
+                        >
+                            Format JSON
+                        </button>
+                    )}
+                </div>
             </fieldset>
 
             <fieldset style={{ marginBottom: 15, padding: 15 }}>
@@ -1037,396 +924,3 @@ ${selectedDefaultsObjectNodeCode}
 }
 
 export default App;
-
-// =====================================================================================================================
-// import React, { useState } from "react";
-// import yaml from "js-yaml";
-// import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-// import { vscDarkPlus } from "react-syntax-highlighter/dist/cjs/styles/prism";
-// import Swal from "sweetalert2";
-// import { ToastContainer, toast } from "react-toastify";
-// import "react-toastify/dist/ReactToastify.css";
-//
-// function App() {
-//     const [swaggerSpec, setSwaggerSpec] = useState("");
-//     const [parsedSpec, setParsedSpec] = useState(null);
-//     const [apiPath, setApiPath] = useState("");
-//     const [requestMethod, setRequestMethod] = useState("post");
-//     const [generatedCode, setGeneratedCode] = useState("");
-//
-//     const parseSwaggerSpec = () => {
-//         try {
-//             let parsed;
-//             if (swaggerSpec.trim().startsWith("{")) {
-//                 parsed = JSON.parse(swaggerSpec);
-//             } else {
-//                 parsed = yaml.load(swaggerSpec);
-//             }
-//             setParsedSpec(parsed);
-//             toast.success("Swagger parsed successfully!");
-//         } catch (e) {
-//             Swal.fire({
-//                 icon: "error",
-//                 title: "Invalid Swagger",
-//                 text: e.message,
-//             });
-//         }
-//     };
-//
-//     const dereferenceSchema = (spec, schema) => {
-//         if (!schema || !schema["$ref"]) return schema;
-//         const refPath = schema["$ref"].replace(/^#\//, "").split("/");
-//         return refPath.reduce((acc, key) => acc[key], spec);
-//     };
-//
-//     const generateExampleFromSchema = (schema) => {
-//         if (!schema || typeof schema !== "object") return null;
-//
-//         if (schema.type === "object" && schema.properties) {
-//             const result = {};
-//             for (const [key, propSchema] of Object.entries(schema.properties)) {
-//                 result[key] = generateExampleFromSchema(propSchema);
-//             }
-//             return result;
-//         } else if (schema.type === "array" && schema.items) {
-//             return [generateExampleFromSchema(schema.items)];
-//         }
-//
-//         if (schema.example !== undefined) return schema.example;
-//         if (schema.default !== undefined) return schema.default;
-//
-//         switch (schema.type) {
-//             case "string": return "string";
-//             case "integer": return 0;
-//             case "number": return 0.0;
-//             case "boolean": return true;
-//             default: return null;
-//         }
-//     };
-//
-//     const detectType = (value) => {
-//         if (Array.isArray(value)) {
-//             if (value.length === 0) return "List<Object>";
-//             return "List<" + detectType(value[0]) + ">";
-//         }
-//         if (value === null) return "Object";
-//         switch (typeof value) {
-//             case "number":
-//                 return Number.isInteger(value) ? "int" : "double";
-//             case "boolean":
-//                 return "boolean";
-//             case "object":
-//                 return null;
-//             default:
-//                 return "String";
-//         }
-//     };
-//
-//     const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
-//
-//     function generateClass(name, jsonObj, classes = {}, processed = new Set()) {
-//         if (processed.has(name)) return;
-//         processed.add(name);
-//
-//         let classCode = `public class ${name} {\n`;
-//         let gettersSetters = "";
-//
-//         for (const [key, value] of Object.entries(jsonObj)) {
-//             let type = detectType(value);
-//
-//             if (type === null) {
-//                 const nestedClassName = capitalize(key);
-//                 generateClass(nestedClassName, value, classes, processed);
-//                 type = nestedClassName;
-//             } else if (type.startsWith("List<")) {
-//                 if (Array.isArray(value) && value.length > 0 && typeof value[0] === "object") {
-//                     const nestedClassName = capitalize(key);
-//                     generateClass(nestedClassName, value[0], classes, processed);
-//                     type = `List<${nestedClassName}>`;
-//                 }
-//             }
-//
-//             classCode += `    private ${type} ${key};\n`;
-//
-//             gettersSetters += `    public ${type} get${capitalize(key)}() { return ${key}; }\n`;
-//             gettersSetters += `    public void set${capitalize(key)}(${type} ${key}) { this.${key} = ${key}; }\n\n`;
-//         }
-//
-//         classCode += "\n" + gettersSetters + "}\n";
-//
-//         classes[name] = classCode;
-//         return classes;
-//     }
-//
-//     const extractSchemasFromSwagger = (parsed, path, method) => {
-//         const operation = parsed.paths?.[path]?.[method.toLowerCase()];
-//         const requestSchema = operation?.requestBody?.content?.["application/json"]?.schema;
-//         const responseSchema = operation?.responses?.["200"]?.content?.["application/json"]?.schema;
-//         return {
-//             request: dereferenceSchema(parsed, requestSchema),
-//             response: dereferenceSchema(parsed, responseSchema)
-//         };
-//     };
-//
-//     const generateCodeFromSwagger = () => {
-//         if (!parsedSpec || !apiPath.trim()) {
-//             Swal.fire({
-//                 icon: "error",
-//                 title: "Missing Info",
-//                 text: "Please parse Swagger and specify an endpoint path.",
-//             });
-//             return;
-//         }
-//
-//         const { request, response } = extractSchemasFromSwagger(parsedSpec, apiPath, requestMethod);
-//         const requestExample = generateExampleFromSchema(request);
-//         const responseExample = generateExampleFromSchema(response);
-//
-//         const pojoRequest = generateClass("RequestBody", requestExample);
-//         const pojoResponse = generateClass("ResponseBody", responseExample);
-//
-//         const code = `// === RequestBody.java ===\n${Object.values(pojoRequest).join("\n")}\n\n// === ResponseBody.java ===\n${Object.values(pojoResponse).join("\n")}`;
-//
-//         setGeneratedCode(code);
-//         toast.success("Code generated from Swagger!");
-//     };
-//
-//     return (
-//         <div style={{ maxWidth: 1000, margin: "30px auto", padding: 20 }}>
-//             <ToastContainer />
-//             <h2>Swagger to POJO Generator</h2>
-//             <textarea
-//                 rows={15}
-//                 value={swaggerSpec}
-//                 onChange={(e) => setSwaggerSpec(e.target.value)}
-//                 placeholder="Paste Swagger/OpenAPI spec here (JSON or YAML)"
-//                 style={{ width: "100%", fontFamily: "monospace", padding: 10, marginBottom: 10 }}
-//             />
-//             <button onClick={parseSwaggerSpec} style={{ marginBottom: 20 }}>Parse Swagger</button>
-//
-//             {parsedSpec && (
-//                 <>
-//                     <div style={{ marginBottom: 15 }}>
-//                         <label>API Path (e.g. /users)</label>
-//                         <input
-//                             type="text"
-//                             value={apiPath}
-//                             onChange={(e) => setApiPath(e.target.value)}
-//                             style={{ width: "100%", padding: 8 }}
-//                         />
-//                     </div>
-//                     <div style={{ marginBottom: 15 }}>
-//                         <label>Request Method</label>
-//                         <select value={requestMethod} onChange={(e) => setRequestMethod(e.target.value)} style={{ width: "100%", padding: 8 }}>
-//                             <option value="get">GET</option>
-//                             <option value="post">POST</option>
-//                             <option value="put">PUT</option>
-//                             <option value="delete">DELETE</option>
-//                         </select>
-//                     </div>
-//                     <button onClick={generateCodeFromSwagger}>Generate Code</button>
-//                 </>
-//             )}
-//
-//             {generatedCode && (
-//                 <div style={{ marginTop: 30 }}>
-//                     <h3>Generated Java Code</h3>
-//                     <SyntaxHighlighter language="java" style={vscDarkPlus}>
-//                         {generatedCode}
-//                     </SyntaxHighlighter>
-//                 </div>
-//             )}
-//         </div>
-//     );
-// }
-//
-// export default App;
-
-
-
-
-
-
-// import React, { useState } from "react";
-// import yaml from "js-yaml";
-// import SwaggerUI from "swagger-ui-react";
-// import "swagger-ui-react/swagger-ui.css";
-// import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-// import { vscDarkPlus } from "react-syntax-highlighter/dist/cjs/styles/prism";
-// import { ToastContainer, toast } from "react-toastify";
-// import "react-toastify/dist/ReactToastify.css";
-// import Swal from "sweetalert2";
-//
-// function App() {
-//     const [swaggerSpec, setSwaggerSpec] = useState("");
-//     const [parsedSpec, setParsedSpec] = useState(null);
-//     const [apiPath, setApiPath] = useState("");
-//     const [requestMethod, setRequestMethod] = useState("post");
-//     const [generatedCode, setGeneratedCode] = useState("");
-//     const [featureFile, setFeatureFile] = useState("");
-//     const [stepDefinition, setStepDefinition] = useState("");
-//     const handleFileUpload = (e) => {
-//         const file = e.target.files[0];
-//         if (!file) return;
-//         const reader = new FileReader();
-//         reader.onload = (event) => {
-//             const content = event.target.result;
-//             setSwaggerSpec(content);
-//             parseSwaggerContent(content);
-//         };
-//         reader.readAsText(file);
-//     };
-//
-//     const parseSwaggerContent = (content) => {
-//         try {
-//             const parsed = content.trim().startsWith("{")
-//                 ? JSON.parse(content)
-//                 : yaml.load(content);
-//             setParsedSpec(parsed);
-//             toast.success("Swagger parsed successfully!");
-//         } catch (e) {
-//             Swal.fire({ icon: "error", title: "Invalid Swagger", text: e.message });
-//         }
-//     };
-//
-//     const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
-//     const dereferenceSchema = (spec, schema) => {
-//         if (!schema || !schema["$ref"]) return schema;
-//         const refPath = schema["$ref"].replace(/^#\\/, "").split("/");
-//         return refPath.reduce((acc, key) => acc[key], spec);
-//     };
-//
-//     const generateExampleFromSchema = (schema) => {
-//         if (!schema || typeof schema !== "object") return null;
-//         if (schema.type === "object" && schema.properties) {
-//             const result = {};
-//             for (const [k, v] of Object.entries(schema.properties)) {
-//                 result[k] = generateExampleFromSchema(v);
-//             }
-//             return result;
-//         } else if (schema.type === "array") {
-//             return [generateExampleFromSchema(schema.items)];
-//         }
-//         switch (schema.type) {
-//             case "string": return "string";
-//             case "integer": return 0;
-//             case "number": return 0.0;
-//             case "boolean": return true;
-//             default: return null;
-//         }
-//     };
-//     const detectType = (val) => {
-//         if (Array.isArray(val)) {
-//             return `List<${detectType(val[0] || {})}>`;
-//         }
-//         if (val === null) return "Object";
-//         switch (typeof val) {
-//             case "number": return Number.isInteger(val) ? "int" : "double";
-//             case "boolean": return "boolean";
-//             case "object": return null;
-//             default: return "String";
-//         }
-//     };
-//
-//     const generateClass = (name, jsonObj, classes = {}, seen = new Set()) => {
-//         if (seen.has(name)) return;
-//         seen.add(name);
-//
-//         let body = `public class ${name} {\n`;
-//         let methods = "";
-//
-//         for (const [key, val] of Object.entries(jsonObj)) {
-//             let type = detectType(val);
-//             if (type === null) {
-//                 const nested = capitalize(key);
-//                 generateClass(nested, val, classes, seen);
-//                 type = nested;
-//             }
-//             body += `    private ${type} ${key};\n`;
-//             methods += `    public ${type} get${capitalize(key)}() { return ${key}; }\n`;
-//             methods += `    public void set${capitalize(key)}(${type} ${key}) { this.${key} = ${key}; }\n\n`;
-//         }
-//
-//         classes[name] = `${body}\n${methods}}`;
-//         return classes;
-//     };
-//
-//     const extractSchemasFromSwagger = (spec, path, method) => {
-//         const op = spec.paths?.[path]?.[method];
-//         return {
-//             request: dereferenceSchema(spec, op?.requestBody?.content?.["application/json"]?.schema),
-//             response: dereferenceSchema(spec, op?.responses?.["200"]?.content?.["application/json"]?.schema),
-//         };
-//     };
-//
-//     const generateCodeFromSwagger = () => {
-//         if (!parsedSpec || !apiPath) return;
-//
-//         const { request, response } = extractSchemasFromSwagger(parsedSpec, apiPath, requestMethod);
-//         const reqExample = generateExampleFromSchema(request);
-//         const resExample = generateExampleFromSchema(response);
-//
-//         const classes = {};
-//         generateClass("RequestBody", reqExample, classes);
-//         generateClass("ResponseBody", resExample, classes);
-//
-//         const code = `// === RequestBody.java ===\n${classes["RequestBody"]}\n\n// === ResponseBody.java ===\n${classes["ResponseBody"]}`;
-//         setGeneratedCode(code);
-//
-//         const feature = `Feature: ${capitalize(apiPath)} API\n\n  Scenario: ${requestMethod.toUpperCase()} ${apiPath}\n    Given the user sends a ${requestMethod.toUpperCase()} request to "${apiPath}"\n    Then the response status code should be 200\n    And the response body should contain valid data`;
-//         const steps = `import io.cucumber.java.en.*;\n\npublic class ${capitalize(requestMethod)}${capitalize(apiPath.replace(/[\\/{}]/g, ""))}Steps {\n\n  @Given("the user sends a ${requestMethod.toUpperCase()} request to \\"${apiPath}\\")\n  public void sendRequest() {\n    // Implement request\n  }\n\n  @Then("the response status code should be 200")\n  public void verifyStatus() {\n    // Assert status\n  }\n\n  @And("the response body should contain valid data")\n  public void verifyResponse() {\n    // Validate response\n  }\n}`;
-//
-//         setFeatureFile(feature);
-//         setStepDefinition(steps);
-//         toast.success("Code + BDD generated!");
-//     };
-//
-//     return (
-//         <div style={{ maxWidth: 1100, margin: "30px auto", padding: 20 }}>
-//             <ToastContainer />
-//             <h2>Swagger UI + POJO + BDD Generator</h2>
-//
-//             <input type="file" accept=".json,.yaml,.yml" onChange={handleFileUpload} />
-//             <textarea rows={8} value={swaggerSpec} onChange={(e) => setSwaggerSpec(e.target.value)} placeholder="Or paste Swagger YAML/JSON" style={{ width: "100%", marginTop: 10 }} />
-//             <button onClick={() => parseSwaggerContent(swaggerSpec)}>Parse Swagger</button>
-//
-//             {parsedSpec && <SwaggerUI spec={parsedSpec} />}
-//
-//             {parsedSpec && (
-//                 <>
-//                     <input value={apiPath} onChange={(e) => setApiPath(e.target.value)} placeholder="e.g. /users" style={{ width: "100%", marginTop: 10 }} />
-//                     <select value={requestMethod} onChange={(e) => setRequestMethod(e.target.value)} style={{ width: "100%", marginBottom: 10 }}>
-//                         <option value="get">GET</option>
-//                         <option value="post">POST</option>
-//                         <option value="put">PUT</option>
-//                         <option value="delete">DELETE</option>
-//                     </select>
-//                     <button onClick={generateCodeFromSwagger}>Generate Code + BDD</button>
-//                 </>
-//             )}
-//
-//             {generatedCode && (
-//                 <>
-//                     <h3>Generated Java Code</h3>
-//                     <SyntaxHighlighter language="java" style={vscDarkPlus}>{generatedCode}</SyntaxHighlighter>
-//                 </>
-//             )}
-//
-//             {featureFile && (
-//                 <>
-//                     <h3>Feature File</h3>
-//                     <SyntaxHighlighter language="gherkin" style={vscDarkPlus}>{featureFile}</SyntaxHighlighter>
-//                 </>
-//             )}
-//
-//             {stepDefinition && (
-//                 <>
-//                     <h3>Step Definition</h3>
-//                     <SyntaxHighlighter language="java" style={vscDarkPlus}>{stepDefinition}</SyntaxHighlighter>
-//                 </>
-//             )}
-//         </div>
-//     );
-// }
-//
-// export default App;
