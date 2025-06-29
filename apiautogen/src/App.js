@@ -89,10 +89,18 @@ function App() {
                 });
                 return;
             }
-            const parsed = JSON.parse(jsonStr);
+
+            const parsed = JSON.parse(jsonStr); // ✅ Moved to top
             const pretty = JSON.stringify(parsed, null, 2);
             setter(pretty);
+
+            if (field === 'request') {
+                setParsedRequestBody(parsed);
+                setSelectedRequestFields(getAllFieldPaths(parsed));
+            }
+
             setViewMode({ ...viewMode, [field]: 'view' });
+
         } catch (e) {
             Swal.fire({
                 icon: 'error',
@@ -101,6 +109,16 @@ function App() {
             });
         }
     };
+
+
+    const toggleField = (key) => {
+        setSelectedRequestFields(prev =>
+            prev.includes(key) ? prev.filter(k => k !== key) : [...prev, key]
+        );
+    };
+
+    // const selectAllFields = () => setSelectedRequestFields(Object.keys(parsedRequestBody));
+    // const deselectAllFields = () => setSelectedRequestFields([]);
 
     const toggleEditMode = (field) => {
         setViewMode({ ...viewMode, [field]: 'edit' });
@@ -436,6 +454,91 @@ public class ${capitalize(serviceName)}Steps {
         document.body.removeChild(element);
     };
 
+    const [collapse, setCollapse] = useState({
+        headers: false,
+        request: false,
+        success: false,
+        error: false,
+    });
+
+    const toggleCollapse = (section) => {
+        setCollapse({ ...collapse, [section]: !collapse[section] });
+    };
+
+    const CollapsibleSection = ({ title, sectionKey, children }) => (
+        <div style={{
+            marginBottom: 15,
+            border: '1px solid #ddd',
+            borderRadius: 6,
+            overflow: 'hidden',
+            fontFamily: 'Segoe UI, sans-serif'
+        }}>
+            <div
+                onClick={() => toggleCollapse(sectionKey)}
+                style={{
+                    cursor: 'pointer',
+                    backgroundColor: '#f6f8fa',
+                    padding: '10px 15px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    borderBottom: '1px solid #ddd',
+                    fontWeight: 600
+                }}
+            >
+                <span>{collapse[sectionKey] ? '▾' : '▸'} {title}</span>
+            </div>
+            {collapse[sectionKey] && (
+                <div style={{ padding: 15 }}>{children}</div>
+            )}
+        </div>
+    );
+
+    const getAllFieldPaths = (obj, path = '') => {
+        let paths = [];
+        for (const [key, value] of Object.entries(obj)) {
+            const fullPath = path ? `${path}.${key}` : key;
+            if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+                paths = paths.concat(getAllFieldPaths(value, fullPath));
+            } else {
+                paths.push(fullPath);
+            }
+        }
+        return paths;
+    };
+
+    const selectAllFields = () => setSelectedRequestFields(getAllFieldPaths(parsedRequestBody));
+    const deselectAllFields = () => setSelectedRequestFields([]);
+
+
+    const [selectedRequestFields, setSelectedRequestFields] = useState([]);
+    const [parsedRequestBody, setParsedRequestBody] = useState({});
+
+    const renderFieldCheckboxes = (obj, path = '') => {
+        return Object.entries(obj).map(([key, value]) => {
+            const fullPath = path ? `${path}.${key}` : key;
+            if (value !== null && typeof value === 'object' && !Array.isArray(value)) {
+                return (
+                    <div key={fullPath} style={{ marginLeft: path ? 20 : 0 }}>
+                        <strong>{key}</strong>
+                        <div>{renderFieldCheckboxes(value, fullPath)}</div>
+                    </div>
+                );
+            } else {
+                return (
+                    <label key={fullPath} style={{ display: 'block', marginLeft: path ? 20 : 0 }}>
+                        <input
+                            type="checkbox"
+                            checked={selectedRequestFields.includes(fullPath)}
+                            onChange={() => toggleField(fullPath)}
+                        /> {fullPath}
+                    </label>
+                );
+            }
+        });
+    };
+
+
     return (
         <div style={{
             maxWidth: 1200,
@@ -467,7 +570,12 @@ public class ${capitalize(serviceName)}Steps {
                 <input
                     type="text"
                     value={serviceName}
-                    onChange={(e) => setServiceName(e.target.value)}
+                    onChange={(e) => {
+                        const value = e.target.value;
+                        if (!value.includes(' ')) {
+                            setServiceName(value);
+                        }
+                    }}
                     placeholder="Enter service name"
                     style={{ width: "100%", padding: 8 }}
                 />
@@ -501,8 +609,7 @@ public class ${capitalize(serviceName)}Steps {
                 </select>
             </div>
 
-            <fieldset style={{ marginBottom: 15, padding: 15 }}>
-                <legend>Request Headers</legend>
+            <CollapsibleSection title="Request Headers" sectionKey="headers">
                 <div style={{ marginBottom: 8, display: "flex", gap: 8 }}>
                     <input
                         type="text"
@@ -577,10 +684,9 @@ public class ${capitalize(serviceName)}Steps {
                         ))}
                     </ul>
                 )}
-            </fieldset>
+            </CollapsibleSection>
 
-            <fieldset style={{ marginBottom: 15, padding: 15 }}>
-                <legend>Request Body</legend>
+            <CollapsibleSection title="Request Body" sectionKey="request">
                 {viewMode.request === 'view' ? (
                     <div style={{ position: 'relative' }}>
                         <SyntaxHighlighter
@@ -641,10 +747,29 @@ public class ${capitalize(serviceName)}Steps {
                         </button>
                     )}
                 </div>
-            </fieldset>
+                {viewMode.request === 'view' && Object.keys(parsedRequestBody).length > 0 && (
+                    <div style={{ marginTop: 10 }}>
+                        <strong>Select Fields:</strong>
+                        <div style={{ display: 'flex', gap: 10, marginBottom: 8 }}>
+                            <button onClick={selectAllFields}>Select All</button>
+                            <button onClick={deselectAllFields}>Select None</button>
+                        </div>
+                        <div style={{
+                            maxHeight: '250px',
+                            overflowY: 'auto',
+                            padding: '10px',
+                            border: '1px solid #ccc',
+                            borderRadius: '4px',
+                            backgroundColor: '#f9f9f9'
+                        }}>
+                            {renderFieldCheckboxes(parsedRequestBody)}
+                        </div>
+                    </div>
 
-            <fieldset style={{ marginBottom: 15, padding: 15 }}>
-                <legend>Success Response Body</legend>
+                )}
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Success Response Body" sectionKey="success">
                 {viewMode.response === 'view' ? (
                     <div style={{ position: 'relative' }}>
                         <SyntaxHighlighter
@@ -705,10 +830,9 @@ public class ${capitalize(serviceName)}Steps {
                         </button>
                     )}
                 </div>
-            </fieldset>
+            </CollapsibleSection>
 
-            <fieldset style={{ marginBottom: 15, padding: 15 }}>
-                <legend>Error Response Body</legend>
+            <CollapsibleSection title="Error Response Body" sectionKey="error">
                 {viewMode.error === 'view' ? (
                     <div style={{ position: 'relative' }}>
                         <SyntaxHighlighter
@@ -769,7 +893,7 @@ public class ${capitalize(serviceName)}Steps {
                         </button>
                     )}
                 </div>
-            </fieldset>
+            </CollapsibleSection>
 
             <div style={{ marginBottom: 15 }}>
                 <label>Response Code</label>
