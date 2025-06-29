@@ -1,19 +1,34 @@
 {
   "manifest_version": 3,
-  "name": "Selenium Codegen",
+  "name": "Selenium Recorder",
   "version": "1.0",
-  "action": {
-    "default_popup": "popup.html"
-  },
   "permissions": [
+    "activeTab",
     "scripting",
-    "storage",
-    "activeTab"
+    "storage"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "http://localhost:3003/*"
   ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
   "background": {
     "service_worker": "background.js"
-  }
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content-scripts/recorder.js"]
+    }
+  ],
+  "web_accessible_resources": [{
+    "resources": ["content-scripts/recorder.js"],
+    "matches": ["<all_urls>"]
+  }]
 }
