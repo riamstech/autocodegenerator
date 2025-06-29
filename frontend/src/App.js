@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import Highlight from './components/Highlight';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/cjs/styles/prism';
 import './App.css';
 
 function App() {
@@ -170,6 +171,39 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
+  // Custom code line renderer with syntax highlighting
+  const CodeLine = ({ code, selected, onClick }) => {
+    return (
+        <div
+            className={`code-line ${selected ? 'selected' : ''}`}
+            onClick={onClick}
+        >
+          <SyntaxHighlighter
+              language="java"
+              style={vscDarkPlus}
+              customStyle={{
+                margin: 0,
+                padding: '0.5em',
+                background: selected ? '#2a2d2e' : 'transparent',
+                borderRadius: '4px',
+                fontSize: '0.9em',
+                cursor: 'pointer'
+              }}
+              lineNumberStyle={{
+                minWidth: '2.25em',
+                paddingRight: '1em',
+                color: '#858585',
+                textAlign: 'right'
+              }}
+              showLineNumbers
+              wrapLines
+          >
+            {code}
+          </SyntaxHighlighter>
+        </div>
+    );
+  };
+
   return (
       <div className="App">
         <header>
@@ -185,19 +219,18 @@ function App() {
         <div className="container">
           <div className="top-row">
             <div className="code-display">
-              <h2>Received Selenium Code</h2>
+              <h2>Action Performed on the Web</h2>
               <div className="code-container">
                 {codeLines.length === 0 ? (
                     <p className="empty-state">No Record Action Performed yet</p>
                 ) : (
                     codeLines.map((line, index) => (
-                        <div
+                        <CodeLine
                             key={index}
-                            className={`code-line ${selectedLines.includes(index) ? 'selected' : ''}`}
+                            code={line || ''}
+                            selected={selectedLines.includes(index)}
                             onClick={() => toggleLineSelection(index)}
-                        >
-                          <Highlight language="java" code={line || ''} />
-                        </div>
+                        />
                     ))
                 )}
               </div>
@@ -244,7 +277,19 @@ function App() {
                   pageClasses.map((page, index) => (
                       <div key={index} className="page-class">
                         <h3>{page.name}.java</h3>
-                        <Highlight language="java" code={page.content || ''} />
+                        <SyntaxHighlighter
+                            language="java"
+                            style={vscDarkPlus}
+                            customStyle={{
+                              margin: 0,
+                              borderRadius: '4px',
+                              fontSize: '0.9em'
+                            }}
+                            showLineNumbers
+                            wrapLines
+                        >
+                          {page.content}
+                        </SyntaxHighlighter>
                         <div className="button-group">
                           <button
                               onClick={() => {

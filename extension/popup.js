@@ -26,16 +26,33 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 });
 
-// The recorderScript function is declared globally here so that chrome.scripting.executeScript can inject it.
-
 function recorderScript() {
   if (window.hasRecorder) return;
   window.hasRecorder = true;
 
-  document.addEventListener('input', handleInput, true);
+  // Track the last focused input element
+  let lastFocusedInput = null;
+
+  document.addEventListener('focusin', handleFocusIn, true);
+  document.addEventListener('focusout', handleFocusOut, true);
   document.addEventListener('click', handleClick, true);
   document.addEventListener('dblclick', handleDoubleClick, true);
   document.addEventListener('change', handleChange, true);
+
+  function handleFocusIn(e) {
+    const el = e.target;
+    if (el.tagName.toLowerCase() === 'input' || el.tagName.toLowerCase() === 'textarea') {
+      lastFocusedInput = el;
+    }
+  }
+
+  function handleFocusOut(e) {
+    const el = e.target;
+    if (el === lastFocusedInput && (el.tagName.toLowerCase() === 'input' || el.tagName.toLowerCase() === 'textarea')) {
+      recordAction(el, 'sendKeys');
+      lastFocusedInput = null;
+    }
+  }
 
   function handleClick(e) {
     const el = findClosestClickable(e.target);
@@ -46,12 +63,6 @@ function recorderScript() {
   function handleDoubleClick(e) {
     const el = e.target;
     recordAction(el, 'doubleClick');
-  }
-
-  function handleInput(e) {
-    const el = e.target;
-    if (el.tagName.toLowerCase() !== 'input' && el.tagName.toLowerCase() !== 'textarea') return;
-    recordAction(el, 'sendKeys');
   }
 
   function handleChange(e) {
@@ -73,13 +84,13 @@ function recorderScript() {
     const tag = el.tagName.toLowerCase();
     const role = el.getAttribute('role');
     return (
-      tag === 'button' ||
-      tag === 'a' ||
-      tag === 'input' ||
-      typeof el.onclick === 'function' ||
-      el.hasAttribute('onclick') ||
-      role === 'button' ||
-      role === 'link'
+        tag === 'button' ||
+        tag === 'a' ||
+        tag === 'input' ||
+        typeof el.onclick === 'function' ||
+        el.hasAttribute('onclick') ||
+        role === 'button' ||
+        role === 'link'
     );
   }
 
