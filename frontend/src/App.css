@@ -270,6 +270,101 @@ h1 {
     border-bottom: 1px solid #2d2d2d;
     color: #569cd6;
 }
+/* Add these styles to your existing CSS */
+.ai-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #444;
+}
+
+.ai-generate-btn {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    margin-top: 10px;
+}
+
+.ai-generate-btn:hover {
+    background-color: #45a049;
+}
+
+.ai-generate-btn:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+.ai-generated-tests {
+    margin-top: 30px;
+    background: #1e1e1e;
+    padding: 20px;
+    border-radius: 8px;
+}
+
+.test-section {
+    margin-bottom: 30px;
+}
+
+.test-section h3 {
+    color: #569cd6;
+    margin-bottom: 10px;
+}
+/* AI Test Generation Section */
+.ai-test-generation {
+    margin-top: 2rem;
+    padding: 1rem;
+    background: #1e1e1e;
+    border-radius: 8px;
+}
+
+.ai-controls {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.api-selector {
+    padding: 0.5rem;
+    background: #2d2d2d;
+    color: white;
+    border: 1px solid #444;
+    border-radius: 4px;
+}
+
+.ai-generate-btn {
+    padding: 0.5rem 1rem;
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.ai-generate-btn:disabled {
+    background: #555;
+    cursor: not-allowed;
+}
+
+.ai-results {
+    display: flex;
+    gap: 2rem;
+    margin-top: 1rem;
+}
+
+.test-section {
+    flex: 1;
+    background: #252526;
+    padding: 1rem;
+    border-radius: 8px;
+}
+
+.test-section h3 {
+    margin-top: 0;
+    color: #569CD6;
+}
 
 @media (max-width: 768px) {
     .top-row {

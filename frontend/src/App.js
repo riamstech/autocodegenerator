@@ -10,7 +10,14 @@ function App() {
   const [currentPageName, setCurrentPageName] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const [error, setError] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+  const [featureFile, setFeatureFile] = useState('');
+  const [stepDefinitions, setStepDefinitions] = useState('');
+  const [showAiSection, setShowAiSection] = useState(false);
   const ws = useRef(null);
+
+  // Hardcoded API key - replace with your actual OpenAI API key
+  const OPENAI_API_KEY = 'sk-your-api-key-here';
 
   useEffect(() => {
     ws.current = new WebSocket('ws://localhost:3003');
@@ -51,6 +58,8 @@ function App() {
     };
   }, []);
 
+  const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+
   const toggleLineSelection = (index) => {
     setSelectedLines(prev =>
         prev.includes(index)
@@ -65,7 +74,13 @@ function App() {
     setSelectedLines([]);
   };
 
-  const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+  const clearAll = () => {
+    setCodeLines([]);
+    setSelectedLines([]);
+    setPageClasses([]);
+    setFeatureFile('');
+    setStepDefinitions('');
+  };
 
   const parseJsonLine = (line) => {
     try {
@@ -153,12 +168,6 @@ function App() {
     setCurrentPageName('');
   };
 
-  const clearAll = () => {
-    setCodeLines([]);
-    setSelectedLines([]);
-    setPageClasses([]);
-  };
-
   const exportToJavaFile = (content, fileName) => {
     const blob = new Blob([content], { type: 'text/x-java-source' });
     const url = URL.createObjectURL(blob);
@@ -171,7 +180,76 @@ function App() {
     URL.revokeObjectURL(url);
   };
 
-  // Custom code line renderer with syntax highlighting
+  const generateTestCases = async () => {
+    if (!pageClasses.length) {
+      setError('Please generate at least one page class first');
+      return;
+    }
+
+    setAiLoading(true);
+    setError(null);
+
+    try {
+      const allPageClasses = pageClasses.map(pc => pc.content).join('\n\n');
+
+      const prompt = `Given the following Selenium Page Object Model classes, generate:
+1. A Cucumber feature file with 3 realistic test scenarios
+2. Corresponding step definitions in Java
+
+Page Classes:
+${allPageClasses}
+
+Format the response as JSON with "feature" and "steps" properties. Include clear scenarios with Given/When/Then steps.`;
+
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENAI_API_KEY}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-3.5-turbo',
+          messages: [
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 2000
+        })
+      });
+
+      if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error('Too many requests. Please wait and try again.');
+        }
+        throw new Error(`API request failed with status ${response.status}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices[0]?.message?.content;
+
+      try {
+        const parsed = JSON.parse(content);
+        if (!parsed.feature || !parsed.steps) {
+          throw new Error('Unexpected response format from AI');
+        }
+        setFeatureFile(parsed.feature);
+        setStepDefinitions(parsed.steps);
+        setShowAiSection(true);
+      } catch (e) {
+        console.error('Failed to parse AI response:', e);
+        setError('Failed to parse AI response. The AI might have returned an unexpected format.');
+      }
+    } catch (err) {
+      console.error('Error generating test cases:', err);
+      setError(err.message || 'Failed to generate test cases');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const CodeLine = ({ code, selected, onClick }) => {
     return (
         <div
@@ -265,6 +343,17 @@ function App() {
               <div className="selection-info">
                 {selectedLines.length} line(s) selected
               </div>
+
+              <div className="ai-section">
+                <h3>AI Test Generation</h3>
+                <button
+                    onClick={generateTestCases}
+                    disabled={!pageClasses.length || aiLoading}
+                    className="ai-generate-btn"
+                >
+                  {aiLoading ? 'Generating...' : 'Generate Test Cases'}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -310,6 +399,68 @@ function App() {
                   ))
               )}
             </div>
+
+            {showAiSection && (
+                <div className="ai-test-generation">
+                  <h2>AI Generated Test Cases</h2>
+
+                  <div className="ai-results">
+                    <div className="test-section">
+                      <h3>Feature File</h3>
+                      <SyntaxHighlighter
+                          language="gherkin"
+                          style={vscDarkPlus}
+                          customStyle={{
+                            margin: 0,
+                            borderRadius: '4px',
+                            fontSize: '0.9em'
+                          }}
+                          showLineNumbers
+                          wrapLines
+                      >
+                        {featureFile}
+                      </SyntaxHighlighter>
+                      <div className="button-group">
+                        <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(featureFile);
+                            }}
+                            className="copy-btn"
+                        >
+                          Copy Feature
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="test-section">
+                      <h3>Step Definitions</h3>
+                      <SyntaxHighlighter
+                          language="java"
+                          style={vscDarkPlus}
+                          customStyle={{
+                            margin: 0,
+                            borderRadius: '4px',
+                            fontSize: '0.9em'
+                          }}
+                          showLineNumbers
+                          wrapLines
+                      >
+                        {stepDefinitions}
+                      </SyntaxHighlighter>
+                      <div className="button-group">
+                        <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(stepDefinitions);
+                            }}
+                            className="copy-btn"
+                        >
+                          Copy Steps
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            )}
           </div>
         </div>
       </div>
