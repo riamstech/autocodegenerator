@@ -14,10 +14,12 @@ function App() {
   const [featureFile, setFeatureFile] = useState('');
   const [stepDefinitions, setStepDefinitions] = useState('');
   const [showAiSection, setShowAiSection] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const ws = useRef(null);
 
-  // Hardcoded API key - replace with your actual OpenAI API key
-  const OPENAI_API_KEY = 'sk-your-api-key-here';
+  // OpenAI API configuration
+  const OPENAI_API_KEY = 'your-openai-api-key'; // Replace with your actual OpenAI API key
+  const OPENAI_API_ENDPOINT = 'https://api.openai.com/v1/chat/completions';
 
   useEffect(() => {
     ws.current = new WebSocket('ws://localhost:3003');
@@ -58,6 +60,22 @@ function App() {
     };
   }, []);
 
+  const handleOpenAIError = (error) => {
+    if (error.response) {
+      switch (error.response.status) {
+        case 401:
+          return 'Invalid API key. Please check your OpenAI API credentials.';
+        case 429:
+          return 'Rate limit exceeded. Please wait before making another request.';
+        case 500:
+          return 'OpenAI API server error. Please try again later.';
+        default:
+          return `API error: ${error.response.status}`;
+      }
+    }
+    return 'Failed to connect to OpenAI API: ' + error.message;
+  };
+
   const capitalize = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
   const toggleLineSelection = (index) => {
@@ -80,6 +98,7 @@ function App() {
     setPageClasses([]);
     setFeatureFile('');
     setStepDefinitions('');
+    setShowAiSection(false);
   };
 
   const parseJsonLine = (line) => {
@@ -168,24 +187,13 @@ function App() {
     setCurrentPageName('');
   };
 
-  const exportToJavaFile = (content, fileName) => {
-    const blob = new Blob([content], { type: 'text/x-java-source' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${fileName}.java`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
   const generateTestCases = async () => {
     if (!pageClasses.length) {
       setError('Please generate at least one page class first');
       return;
     }
 
+    setIsGenerating(true);
     setAiLoading(true);
     setError(null);
 
@@ -196,34 +204,46 @@ function App() {
 1. A Cucumber feature file with 3 realistic test scenarios
 2. Corresponding step definitions in Java
 
+Format the response as JSON with "feature" and "steps" properties. Include clear scenarios with Given/When/Then steps.
+
 Page Classes:
-${allPageClasses}
+${allPageClasses}`;
 
-Format the response as JSON with "feature" and "steps" properties. Include clear scenarios with Given/When/Then steps.`;
-
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch(OPENAI_API_ENDPOINT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Accept': 'application/json'
         },
         body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
+          model: 'gpt-4', // or 'gpt-3.5-turbo' if you prefer
           messages: [
+            {
+              role: 'system',
+              content: 'You are a helpful assistant that generates Selenium test cases from Page Object Model classes.'
+            },
             {
               role: 'user',
               content: prompt
             }
           ],
           temperature: 0.7,
-          max_tokens: 2000
+          max_tokens: 2000,
+          top_p: 0.95,
+          response_format: { type: "json_object" }
         })
       });
 
       if (!response.ok) {
-        if (response.status === 429) {
-          throw new Error('Too many requests. Please wait and try again.');
-        }
+        const errorData = await response.json();
+        console.log('Full error response:', errorData);
+        console.log('Request details:', {
+          endpoint: OPENAI_API_ENDPOINT,
+          headers: response.headers,
+          status: response.status,
+          statusText: response.statusText
+        });
         throw new Error(`API request failed with status ${response.status}`);
       }
 
@@ -244,10 +264,24 @@ Format the response as JSON with "feature" and "steps" properties. Include clear
       }
     } catch (err) {
       console.error('Error generating test cases:', err);
-      setError(err.message || 'Failed to generate test cases');
+      const errorMessage = handleOpenAIError(err);
+      setError(errorMessage);
     } finally {
+      setIsGenerating(false);
       setAiLoading(false);
     }
+  };
+
+  const exportToJavaFile = (content, fileName) => {
+    const blob = new Blob([content], { type: 'text/x-java-source' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${fileName}.java`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   };
 
   const CodeLine = ({ code, selected, onClick }) => {
@@ -348,10 +382,10 @@ Format the response as JSON with "feature" and "steps" properties. Include clear
                 <h3>AI Test Generation</h3>
                 <button
                     onClick={generateTestCases}
-                    disabled={!pageClasses.length || aiLoading}
+                    disabled={!pageClasses.length || isGenerating}
                     className="ai-generate-btn"
                 >
-                  {aiLoading ? 'Generating...' : 'Generate Test Cases'}
+                  {isGenerating ? 'Generating...' : 'Generate Test Cases'}
                 </button>
               </div>
             </div>

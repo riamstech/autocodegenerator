@@ -3,6 +3,42 @@
 <head>
   <title>Selenium Recorder</title>
 </head>
+<style>
+  body {
+    width: 300px;
+    padding: 15px;
+    font-family: Arial, sans-serif;
+  }
+
+  button {
+    padding: 8px 16px;
+    margin: 5px;
+    cursor: pointer;
+    border-radius: 4px;
+    border: 1px solid #ccc;
+    background: #f8f8f8;
+  }
+
+  button.recording {
+    background: #ff4444;
+    color: white;
+    border-color: #cc0000;
+  }
+
+  .recording-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px;
+    margin: 5px 0;
+    border-bottom: 1px solid #eee;
+  }
+
+  h3 {
+    margin: 10px 0;
+    color: #333;
+  }
+</style>
 <body class="p-4 text-center">
   <button id="toggle">Start Recording</button>
   <script src="popup.js"></script>
