@@ -144,48 +144,43 @@ function App() {
         }
     };
 
-    function generateClass(name, jsonObj, classes = {}, processed = new Set()) {
-        if (processed.has(name)) return;
-        processed.add(name);
-
+    function generateClass(name, jsonObj, indent = '    ') {
         let classCode = `public class ${name} {\n`;
-        let gettersSetters = "";
+        let gettersSetters = '';
+        let nestedClasses = '';
 
         for (const [key, value] of Object.entries(jsonObj)) {
             let type = detectType(value);
 
             if (type === null) {
                 const nestedClassName = capitalize(key);
-                generateClass(nestedClassName, value, classes, processed);
+                const nestedCode = generateClass(nestedClassName, value, indent + '   ');
                 type = nestedClassName;
-            } else if (type.startsWith("List<")) {
-                if (Array.isArray(value) && value.length > 0 && typeof value[0] === "object") {
-                    const nestedClassName = capitalize(key);
-                    generateClass(nestedClassName, value[0], classes, processed);
-                    type = `List<${nestedClassName}>`;
-                } else {
-                    type = "List<Object>";
-                }
+                nestedClasses += '\n' + nestedCode.split('\n').map(line => indent + line).join('\n') + '\n';
+            } else if (type.startsWith("List<") && Array.isArray(value) && value.length > 0 && typeof value[0] === 'object') {
+                const nestedClassName = capitalize(key);
+                const nestedCode = generateClass(nestedClassName, value[0], indent + '   ');
+                type = `List<${nestedClassName}>`;
+                nestedClasses += '\n' + nestedCode.split('\n').map(line => indent + line).join('\n') + '\n';
             }
 
-            classCode += `    private ${type} ${key};\n`;
+            classCode += `${indent}private ${type} ${key};\n`;
 
             gettersSetters +=
-                `    public ${type} get${capitalize(key)}() {\n` +
-                `        return ${key};\n` +
-                `    }\n\n`;
-
-            gettersSetters +=
-                `    public void set${capitalize(key)}(${type} ${key}) {\n` +
-                `        this.${key} = ${key};\n` +
-                `    }\n\n`;
+                `${indent}public ${type} get${capitalize(key)}() {\n` +
+                `${indent}    return ${key};\n` +
+                `${indent}}\n\n` +
+                `${indent}public void set${capitalize(key)}(${type} ${key}) {\n` +
+                `${indent}    this.${key} = ${key};\n` +
+                `${indent}}\n\n`;
         }
 
-        classCode += "\n" + gettersSetters + "}\n";
+        classCode += '\n' + gettersSetters + nestedClasses + '}\n';
 
-        classes[name] = classCode;
-        return classes;
+        return classCode;
     }
+
+
 
     const generateCode = () => {
         if (!serviceName.trim()) {
@@ -212,7 +207,7 @@ function App() {
         try {
             requestPojoClasses = requestBody.trim()
                 ? generateClass("RequestBody", JSON.parse(requestBody))
-                : {};
+                : '';
         } catch {
             Swal.fire({
                 icon: 'error',
@@ -225,7 +220,7 @@ function App() {
         try {
             responsePojoClasses = responseBody.trim()
                 ? generateClass("SuccessResponseData", JSON.parse(responseBody))
-                : {};
+                : '';
         } catch {
             Swal.fire({
                 icon: 'error',
@@ -238,7 +233,7 @@ function App() {
         try {
             errorResponsePojoClasses = errorResponseBody.trim()
                 ? generateClass("ErrorResponseData", JSON.parse(errorResponseBody))
-                : {};
+                : '';
         } catch {
             Swal.fire({
                 icon: 'error',
@@ -248,9 +243,10 @@ function App() {
             return;
         }
 
-        const requestPojo = Object.values(requestPojoClasses).join("\n");
-        const responsePojo = Object.values(responsePojoClasses).join("\n");
-        const errorResponsePojo = Object.values(errorResponsePojoClasses).join("\n");
+
+        const requestPojo = requestPojoClasses;
+        const responsePojo = responsePojoClasses;
+        const errorResponsePojo = errorResponsePojoClasses;
 
         const methodLower = requestType.toLowerCase();
 
